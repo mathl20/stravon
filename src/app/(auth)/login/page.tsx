@@ -96,7 +96,7 @@ export default function LoginPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form method="post" action="/api/auth/login" onSubmit={handleSubmit} className="space-y-4">
         <Input label="Email" name="email" type="email" value={form.email} onChange={set('email')} required placeholder="vous@exemple.fr" />
         <div>
           <Input label="Mot de passe" name="password" type="password" value={form.password} onChange={set('password')} required placeholder="••••••••" />
