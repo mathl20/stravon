@@ -601,6 +601,49 @@
   background: #6182ff;
 }
 
+/* Burger button — hidden on desktop */
+.marketing-burger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  z-index: 110;
+}
+
+.marketing-burger-line {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #f0f0f5;
+  border-radius: 2px;
+  transition: all 0.3s;
+}
+
+.marketing-burger-line.open:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.marketing-burger-line.open:nth-child(2) {
+  opacity: 0;
+}
+
+.marketing-burger-line.open:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -5px);
+}
+
+/* Mobile overlay */
+.marketing-mobile-overlay {
+  display: none;
+}
+
+/* Mobile menu */
+.marketing-mobile-menu {
+  display: none;
+}
+
 /* Footer */
 .marketing-footer {
   border-top: 1px solid #1e1e28;
@@ -651,12 +694,73 @@
   }
 
   .marketing-nav-links { display: none !important; }
+  .marketing-nav-actions { display: none !important; }
 
-  .marketing-nav-login { display: none; }
+  .marketing-burger {
+    display: flex;
+  }
 
-  .marketing-nav-register {
-    padding: 8px 16px;
-    font-size: 0.8rem;
+  .marketing-mobile-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 99;
+  }
+
+  .marketing-mobile-menu {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 280px;
+    height: 100vh;
+    background: #0e0e12;
+    border-left: 1px solid #1e1e28;
+    padding: 80px 24px 32px;
+    z-index: 105;
+    gap: 4px;
+    animation: m-slideIn 0.25s ease;
+  }
+
+  @keyframes m-slideIn {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+
+  .marketing-mobile-menu a {
+    color: #8888a0;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 14px 16px;
+    border-radius: 12px;
+    transition: all 0.2s;
+  }
+
+  .marketing-mobile-menu a:hover {
+    color: #f0f0f5;
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .marketing-mobile-divider {
+    height: 1px;
+    background: #1e1e28;
+    margin: 8px 0;
+  }
+
+  .marketing-mobile-cta {
+    background: #4f6ef7 !important;
+    color: white !important;
+    text-align: center;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    margin-top: 8px;
+  }
+
+  .marketing-mobile-cta:hover {
+    background: #6182ff !important;
   }
 
   .m-hero-stats { gap: 24px; }

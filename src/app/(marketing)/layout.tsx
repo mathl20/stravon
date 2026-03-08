@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { MarketingNav } from './marketing-nav';
 
 export const metadata: Metadata = {
   title: 'Stravon — Gestion simplifiée pour artisans du bâtiment',
@@ -14,21 +15,7 @@ export const metadata: Metadata = {
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ fontFamily: "'Outfit', sans-serif", background: '#060608', color: '#f0f0f5', minHeight: '100vh' }}>
-      {/* Nav */}
-      <nav className="marketing-navbar">
-        <Link href="/" className="marketing-logo">
-          <div className="marketing-logo-icon">⚡</div>
-          <span className="marketing-logo-text">STRAVON</span>
-        </Link>
-        <ul className="marketing-nav-links">
-          <li><a href="#fonctionnalites">Fonctionnalités</a></li>
-          <li><a href="#tarifs">Tarifs</a></li>
-        </ul>
-        <div className="marketing-nav-actions">
-          <Link href="/login" className="marketing-nav-login">Connexion</Link>
-          <Link href="/register" className="marketing-nav-register">Créer un compte</Link>
-        </div>
-      </nav>
+      <MarketingNav />
 
       <main>{children}</main>
 
