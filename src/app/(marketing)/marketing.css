@@ -1,4 +1,10 @@
 /* Marketing Landing Page Styles */
+
+/* Prevent horizontal overflow on the entire marketing site */
+html, body {
+  overflow-x: hidden;
+}
+
 :root {
   --m-bg: #060608;
   --m-surface: #0e0e12;
@@ -38,6 +44,7 @@
   text-align: center;
   padding: 140px 24px 80px;
   position: relative;
+  overflow: hidden;
 }
 
 .m-hero::before {
@@ -179,7 +186,7 @@
 }
 
 /* Section Common */
-.m-section { padding: 120px 24px; }
+.m-section { padding: 120px 24px; overflow: hidden; }
 
 .m-section-label {
   font-size: 0.75rem;
@@ -222,7 +229,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 2px;
-  max-width: 1000px;
+  max-width: min(1000px, 100%);
   margin: 0 auto;
   background: var(--m-border);
   border-radius: var(--m-radius);
@@ -247,7 +254,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
-  max-width: 1100px;
+  max-width: min(1100px, 100%);
   margin: 0 auto;
 }
 
@@ -312,7 +319,7 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  max-width: 1000px;
+  max-width: min(1000px, 100%);
   margin: 0 auto;
 }
 
@@ -345,7 +352,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 20px;
-  max-width: 1060px;
+  max-width: min(1060px, 100%);
   margin: 0 auto;
   align-items: start;
 }
@@ -438,6 +445,7 @@
   text-align: center;
   padding: 80px 24px;
   border-top: 1px solid var(--m-border);
+  overflow: hidden;
 }
 
 .m-social-avatars { display: flex; justify-content: center; margin-bottom: 20px; }
@@ -472,6 +480,7 @@
   text-align: center;
   padding: 120px 24px;
   position: relative;
+  overflow: hidden;
 }
 
 .m-cta-section::before {
@@ -768,9 +777,12 @@
 
   .m-pain-grid,
   .m-features-grid,
-  .m-pricing-grid,
-  .m-time-grid {
+  .m-pricing-grid {
     grid-template-columns: 1fr;
+  }
+
+  .m-time-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .m-feature-card.highlight-card { grid-column: span 1; }
@@ -806,6 +818,7 @@
   .m-section { padding: 80px 16px; }
   .m-cta-section { padding: 80px 16px; }
 
+  .m-time-grid { grid-template-columns: 1fr; }
   .m-pain-card { padding: 28px 20px; }
   .m-feature-card { padding: 28px 20px; }
   .m-pricing-card { padding: 32px 24px; }
