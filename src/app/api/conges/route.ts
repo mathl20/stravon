@@ -12,6 +12,15 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+
+    // Plan check: Congés requires Business (tier 2)
+    const { getPlanFromPriceId } = await import('@/lib/plans');
+    const comp = user.company as any;
+    const plan = getPlanFromPriceId(comp.stripePriceId, comp.subscriptionStatus);
+    if (plan.tier < 2) {
+      return NextResponse.json({ error: 'Les conges necessitent le plan Business' }, { status: 403 });
+    }
+
     const perms = getEffectivePermissions(user);
 
     const sp = new URL(request.url).searchParams;

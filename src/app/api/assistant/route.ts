@@ -193,6 +193,14 @@ export async function POST(request: NextRequest) {
                    hasPermission(perms, PERMISSIONS.DEVIS_MANAGE);
     if (!canUse) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
 
+    // Plan check: Assistant IA requires Pro (tier 1)
+    const { getPlanFromPriceId } = await import('@/lib/plans');
+    const userCompany = user.company as any;
+    const plan = getPlanFromPriceId(userCompany.stripePriceId, userCompany.subscriptionStatus);
+    if (plan.tier < 1) {
+      return NextResponse.json({ error: 'L\'assistant IA necessite le plan Pro' }, { status: 403 });
+    }
+
     const { prompt } = await request.json();
     if (!prompt || typeof prompt !== 'string') {
       return NextResponse.json({ error: 'Prompt requis' }, { status: 400 });

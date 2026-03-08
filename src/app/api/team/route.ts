@@ -39,6 +39,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
+    // Plan check: team management requires Pro (tier 1) + user limit
+    const { getPlanFromPriceId, getMaxUsersForTier } = await import('@/lib/plans');
+    const company = user.company as any;
+    const plan = getPlanFromPriceId(company.stripePriceId, company.subscriptionStatus);
+    if (plan.tier < 1) {
+      return NextResponse.json({ error: 'La gestion d\'equipe necessite le plan Pro' }, { status: 403 });
+    }
+    const currentCount = await prisma.user.count({ where: { companyId: user.companyId } });
+    const maxUsers = getMaxUsersForTier(plan.tier);
+    if (currentCount >= maxUsers) {
+      return NextResponse.json({
+        error: `Limite atteinte : votre plan ${plan.name} autorise ${maxUsers} utilisateurs maximum. Passez au plan superieur pour ajouter plus de membres.`,
+      }, { status: 403 });
+    }
+
     const body = await request.json();
     const parsed = inviteUserSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });

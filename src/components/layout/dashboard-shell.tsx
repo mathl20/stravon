@@ -7,13 +7,19 @@ import { Sidebar } from './sidebar';
 import { Header } from './header';
 import { cn } from '@/lib/utils';
 import { PermissionsProvider } from '@/lib/permissions-context';
-import { FlaskConical, ArrowRight } from 'lucide-react';
+import { PlanProvider } from '@/lib/plan-context';
+import { getPlanFromPriceId } from '@/lib/plans';
+import { PlanGate } from '@/components/plan-gate';
+import { FlaskConical, ArrowRight, AlertTriangle } from 'lucide-react';
 
-export function DashboardShell({ children, user, company, isDemo = false }: {
+export function DashboardShell({ children, user, company, isDemo = false, subscriptionStatus = 'inactive', isAdminUser = false, stripePriceId = null }: {
   children: React.ReactNode;
   user: { firstName: string; lastName: string; role: string; permissions: string[] };
   company: { name: string };
   isDemo?: boolean;
+  subscriptionStatus?: string;
+  isAdminUser?: boolean;
+  stripePriceId?: string | null;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -34,8 +40,13 @@ export function DashboardShell({ children, user, company, isDemo = false }: {
     return () => { document.body.style.overflow = ''; };
   }, [mobileOpen]);
 
+  const currentPlan = isDemo
+    ? { tier: 2, name: 'Business' }
+    : getPlanFromPriceId(stripePriceId, subscriptionStatus);
+
   return (
     <PermissionsProvider value={user.permissions}>
+    <PlanProvider value={currentPlan}>
       <div className="min-h-screen bg-zinc-50/60">
         {/* Demo banner */}
         {isDemo && (
@@ -71,6 +82,7 @@ export function DashboardShell({ children, user, company, isDemo = false }: {
               collapsed={collapsed}
               onToggle={() => setCollapsed(!collapsed)}
               permissions={user.permissions}
+              isAdmin={isAdminUser}
             />
           </div>
         </div>
@@ -88,6 +100,7 @@ export function DashboardShell({ children, user, company, isDemo = false }: {
             onLinkClick={() => setMobileOpen(false)}
             permissions={user.permissions}
             isMobile
+            isAdmin={isAdminUser}
           />
         </div>
 
@@ -98,9 +111,41 @@ export function DashboardShell({ children, user, company, isDemo = false }: {
           isDemo && 'pt-10'
         )}>
           <Header userName={`${user.firstName} ${user.lastName}`} onMenuToggle={() => setMobileOpen(!mobileOpen)} />
-          <main className="p-4 sm:p-5 lg:p-8 max-w-7xl mx-auto">{children}</main>
+          <main className="p-4 sm:p-5 lg:p-8 max-w-7xl mx-auto">
+            {/* Block access if no subscription (except subscription page, demo, and admin) */}
+            {!isDemo && !isAdminUser && subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing' && pathname !== '/subscription' ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center mb-4">
+                  <AlertTriangle className="w-7 h-7 text-amber-600" />
+                </div>
+                <h2 className="text-xl font-bold text-zinc-900 mb-2">Abonnement requis</h2>
+                {user.role === 'PATRON' ? (
+                  <>
+                    <p className="text-sm text-zinc-500 mb-6 max-w-md">
+                      Pour acceder a STRAVON, vous devez souscrire a un abonnement.
+                    </p>
+                    <Link
+                      href="/subscription"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 text-white text-sm font-medium rounded-xl hover:bg-brand-700 transition-colors"
+                    >
+                      Voir les offres <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </>
+                ) : (
+                  <p className="text-sm text-zinc-500 max-w-md">
+                    Votre entreprise n&apos;a pas d&apos;abonnement actif. Contactez le responsable de votre entreprise pour activer l&apos;acces.
+                  </p>
+                )}
+              </div>
+            ) : pathname === '/subscription' ? (
+              children
+            ) : (
+              <PlanGate>{children}</PlanGate>
+            )}
+          </main>
         </div>
       </div>
+    </PlanProvider>
     </PermissionsProvider>
   );
 }

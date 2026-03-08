@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/lib/stripe';
 import prisma from '@/lib/prisma';
+import Stripe from 'stripe';
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -12,7 +13,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing signature or webhook secret' }, { status: 400 });
   }
 
-  let event;
+  let event: Stripe.Event;
   try {
     const stripe = getStripe();
     event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET);
@@ -21,22 +22,100 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
-  // Handle successful subscription payment
-  if (event.type === 'checkout.session.completed' || event.type === 'invoice.paid') {
-    try {
-      const data = event.data.object as any;
-      const customerEmail = data.customer_email || data.customer_details?.email;
-
-      if (customerEmail) {
-        await handleReferralReward(customerEmail);
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session;
+        await handleCheckoutCompleted(session);
+        break;
       }
-    } catch (error) {
-      console.error('Error processing referral reward:', error);
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object as Stripe.Subscription;
+        await handleSubscriptionUpdate(subscription);
+        break;
+      }
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object as Stripe.Subscription;
+        await handleSubscriptionDeleted(subscription);
+        break;
+      }
+      case 'invoice.paid': {
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerEmail = invoice.customer_email;
+        if (customerEmail) {
+          await handleReferralReward(customerEmail);
+        }
+        break;
+      }
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object as Stripe.Invoice;
+        console.error(`Payment failed for customer ${invoice.customer}`, invoice.id);
+        break;
+      }
     }
+  } catch (error) {
+    console.error(`Error processing webhook ${event.type}:`, error);
   }
 
   return NextResponse.json({ received: true });
 }
+
+// ── Subscription handlers ──────────────────────────────────
+
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  const companyId = session.metadata?.companyId;
+  if (!companyId) return;
+
+  if (session.subscription) {
+    const stripe = getStripe();
+    const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+    await prisma.company.update({
+      where: { id: companyId },
+      data: {
+        stripeSubscriptionId: subscription.id,
+        stripePriceId: subscription.items.data[0]?.price?.id,
+        subscriptionStatus: subscription.status,
+        subscriptionCurrentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+      },
+    });
+  }
+
+  // Handle referral reward
+  const customerEmail = session.customer_email || session.customer_details?.email;
+  if (customerEmail) {
+    await handleReferralReward(customerEmail);
+  }
+}
+
+async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
+  const customerId = subscription.customer as string;
+
+  await prisma.company.updateMany({
+    where: { stripeCustomerId: customerId },
+    data: {
+      stripeSubscriptionId: subscription.id,
+      stripePriceId: subscription.items.data[0]?.price?.id,
+      subscriptionStatus: subscription.status,
+      subscriptionCurrentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+    },
+  });
+}
+
+async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+  const customerId = subscription.customer as string;
+
+  await prisma.company.updateMany({
+    where: { stripeCustomerId: customerId },
+    data: {
+      subscriptionStatus: 'canceled',
+      stripeSubscriptionId: null,
+      stripePriceId: null,
+    },
+  });
+}
+
+// ── Referral reward ────────────────────────────────────────
 
 const MAX_FREE_MONTHS_PER_YEAR = 3;
 
@@ -56,11 +135,9 @@ async function countRewardsLast12Months(userId: string): Promise<number> {
 }
 
 async function handleReferralReward(email: string) {
-  // Find the user who just paid
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) return;
 
-  // Find a PENDING referral where this user is the referred (filleul)
   const referral = await prisma.referral.findFirst({
     where: {
       referredUserId: user.id,
@@ -70,7 +147,6 @@ async function handleReferralReward(email: string) {
 
   if (!referral) return;
 
-  // Check cap for both users (rolling 12-month window)
   const [referrerRewards, referredRewards] = await Promise.all([
     countRewardsLast12Months(referral.referrerUserId),
     countRewardsLast12Months(referral.referredUserId),
@@ -79,7 +155,6 @@ async function handleReferralReward(email: string) {
   const referrerCanEarn = referrerRewards < MAX_FREE_MONTHS_PER_YEAR;
   const referredCanEarn = referredRewards < MAX_FREE_MONTHS_PER_YEAR;
 
-  // Mark referral as REWARDED regardless (the referral itself is valid)
   const operations: any[] = [
     prisma.referral.update({
       where: { id: referral.id },
@@ -87,7 +162,6 @@ async function handleReferralReward(email: string) {
     }),
   ];
 
-  // Only increment free months if under cap
   if (referrerCanEarn) {
     operations.push(
       prisma.user.update({

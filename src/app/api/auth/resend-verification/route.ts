@@ -10,7 +10,7 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 export async function POST(request: NextRequest) {
   try {
     const ip = getClientIp(request);
-    const { allowed, retryAfterMs } = rateLimit(`resend-verify:${ip}`, 3, 5 * 60 * 1000); // 3 per 5 min
+    const { allowed, retryAfterMs } = await rateLimit(`resend-verify:${ip}`, 3, 5 * 60 * 1000); // 3 per 5 min
     if (!allowed) {
       return NextResponse.json(
         { error: `Trop de demandes. Réessayez dans ${Math.ceil(retryAfterMs / 60000)} minutes.` },

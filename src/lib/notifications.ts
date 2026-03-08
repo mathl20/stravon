@@ -10,6 +10,7 @@ const PUSH_TITLES: Record<string, string> = {
   FEUILLE_HEURE: 'Feuille d\'heures',
   CONGE: 'Demande de cong\u00e9',
   PLANNING: 'Planning',
+  SUPPORT: 'Support',
 };
 
 export async function createNotification(

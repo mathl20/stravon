@@ -10,6 +10,7 @@ import { Mail, Loader2 } from 'lucide-react';
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState<string | null>(null);
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
@@ -37,11 +38,12 @@ export default function LoginPage() {
         }
         return;
       }
+      setRedirecting(true);
       router.push('/dashboard');
       router.refresh();
-    } catch {
-      setError('Erreur de connexion');
-    } finally {
+    } catch (err) {
+      console.error('Login fetch error:', err);
+      setError('Erreur de connexion au serveur. Vérifiez votre connexion internet.');
       setLoading(false);
     }
   };
@@ -62,6 +64,15 @@ export default function LoginPage() {
       setResending(false);
     }
   };
+
+  if (redirecting) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-3">
+        <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
+        <p className="text-sm text-zinc-500 font-medium">Connexion en cours...</p>
+      </div>
+    );
+  }
 
   return (
     <>

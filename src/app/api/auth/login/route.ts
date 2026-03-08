@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
-import { createToken, setAuthCookie } from '@/lib/auth';
+import { createToken, setAuthCookie, createRefreshToken, setRefreshCookie } from '@/lib/auth';
 import { loginSchema } from '@/lib/validations';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
@@ -13,7 +13,7 @@ const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 export async function POST(request: NextRequest) {
   try {
     const ip = getClientIp(request);
-    const { allowed, retryAfterMs } = rateLimit(`login:${ip}`, MAX_ATTEMPTS, WINDOW_MS);
+    const { allowed, retryAfterMs } = await rateLimit(`login:${ip}`, MAX_ATTEMPTS, WINDOW_MS);
 
     if (!allowed) {
       const retryAfterSec = Math.ceil(retryAfterMs / 1000);
@@ -45,7 +45,9 @@ export async function POST(request: NextRequest) {
     }
 
     const token = await createToken({ userId: user.id, email: user.email, role: user.role, companyId: user.companyId });
+    const refreshToken = await createRefreshToken(user.id);
     await setAuthCookie(token);
+    await setRefreshCookie(refreshToken);
 
     return NextResponse.json({ message: 'Connexion réussie' });
   } catch (error: any) {

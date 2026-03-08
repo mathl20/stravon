@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { Clock, Plus, Check, X, Trash2, Download, CheckCircle2, XCircle, CalendarCheck } from 'lucide-react';
+import { Clock, Plus, Check, X, Trash2, Download, CheckCircle2, XCircle, CalendarCheck, Filter, ChevronDown, Users } from 'lucide-react';
 import { Button, Card, PageLoader } from '@/components/ui';
 import { apiFetch, formatDate } from '@/lib/utils';
 import { canViewAllTimesheets, canValidateTimesheets } from '@/lib/permissions';
@@ -47,6 +47,12 @@ function getWeekBounds(date: Date) {
   return { monday, sunday };
 }
 
+interface TeamMember {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
 export default function FeuillesHeuresPage() {
   const perms = usePermissions();
   const [feuilles, setFeuilles] = useState<FeuilleHeure[]>([]);
@@ -55,6 +61,9 @@ export default function FeuillesHeuresPage() {
   const [bulkLoading, setBulkLoading] = useState(false);
   const [showRefuseModal, setShowRefuseModal] = useState(false);
   const [motifRefus, setMotifRefus] = useState('');
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string>('all');
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
 
   const fetchData = () => {
     apiFetch<{ data: FeuilleHeure[] }>('/api/feuilles-heures')
@@ -64,6 +73,14 @@ export default function FeuillesHeuresPage() {
   };
 
   useEffect(() => { fetchData(); }, []);
+
+  useEffect(() => {
+    if (canViewAllTimesheets(perms)) {
+      apiFetch<{ data: TeamMember[] }>('/api/team')
+        .then((r) => setTeamMembers(r.data))
+        .catch(() => {});
+    }
+  }, [perms]);
 
   const handleValidate = async (id: string) => {
     try {
@@ -130,6 +147,17 @@ export default function FeuillesHeuresPage() {
     }
   };
 
+  const showAllUsers = canViewAllTimesheets(perms);
+  const canValidate = canValidateTimesheets(perms);
+
+  const filteredFeuilles = selectedUserId === 'all'
+    ? feuilles
+    : feuilles.filter((f) => f.utilisateur.id === selectedUserId);
+
+  const selectedUserLabel = selectedUserId === 'all'
+    ? 'Tous les utilisateurs'
+    : (() => { const m = teamMembers.find((m) => m.id === selectedUserId); return m ? `${m.firstName} ${m.lastName}` : 'Tous les utilisateurs'; })();
+
   // Selection helpers
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
@@ -140,26 +168,24 @@ export default function FeuillesHeuresPage() {
   };
 
   const toggleAll = () => {
-    if (selected.size === feuilles.length) {
+    if (selected.size === filteredFeuilles.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(feuilles.map((f) => f.id)));
+      setSelected(new Set(filteredFeuilles.map((f) => f.id)));
     }
   };
 
   if (loading) return <PageLoader />;
 
-  const showAllUsers = canViewAllTimesheets(perms);
-  const canValidate = canValidateTimesheets(perms);
   const hasSelection = selected.size > 0;
-  const allSelected = feuilles.length > 0 && selected.size === feuilles.length;
+  const allSelected = filteredFeuilles.length > 0 && selected.size === filteredFeuilles.length;
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="page-title">Feuilles d&apos;heures</h1>
-          <p className="page-subtitle">{feuilles.length} feuille{feuilles.length > 1 ? 's' : ''}</p>
+          <p className="page-subtitle">{filteredFeuilles.length} feuille{filteredFeuilles.length > 1 ? 's' : ''}{selectedUserId !== 'all' ? ` (filtrées)` : ''}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" href="/api/feuilles-heures/export" download onClick={() => toast.success('Téléchargement en cours...')}><Download className="w-4 h-4" /> Exporter</Button>
@@ -167,8 +193,53 @@ export default function FeuillesHeuresPage() {
         </div>
       </div>
 
+      {/* User filter dropdown */}
+      {showAllUsers && teamMembers.length > 0 && (
+        <div className="relative">
+          <button
+            onClick={() => setShowUserDropdown(!showUserDropdown)}
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-zinc-700 bg-white border border-zinc-200 rounded-xl hover:bg-zinc-50 transition-colors shadow-sm"
+          >
+            <Users className="w-4 h-4 text-zinc-400" />
+            {selectedUserLabel}
+            <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${showUserDropdown ? 'rotate-180' : ''}`} />
+          </button>
+          {showUserDropdown && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setShowUserDropdown(false)} />
+              <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-zinc-200 rounded-xl shadow-lg z-20 py-1 max-h-72 overflow-y-auto">
+                <button
+                  onClick={() => { setSelectedUserId('all'); setShowUserDropdown(false); setSelected(new Set()); }}
+                  className={`w-full text-left px-4 py-2.5 text-sm hover:bg-zinc-50 transition-colors flex items-center gap-2 ${selectedUserId === 'all' ? 'text-brand-600 font-medium bg-brand-50/50' : 'text-zinc-700'}`}
+                >
+                  <Users className="w-4 h-4" />
+                  Tous les utilisateurs
+                  <span className="ml-auto text-xs text-zinc-400">{feuilles.length}</span>
+                </button>
+                {teamMembers.map((member) => {
+                  const count = feuilles.filter((f) => f.utilisateur.id === member.id).length;
+                  return (
+                    <button
+                      key={member.id}
+                      onClick={() => { setSelectedUserId(member.id); setShowUserDropdown(false); setSelected(new Set()); }}
+                      className={`w-full text-left px-4 py-2.5 text-sm hover:bg-zinc-50 transition-colors flex items-center gap-2 ${selectedUserId === member.id ? 'text-brand-600 font-medium bg-brand-50/50' : 'text-zinc-700'}`}
+                    >
+                      <div className="w-6 h-6 rounded-full bg-zinc-100 flex items-center justify-center text-[10px] font-semibold text-zinc-500 shrink-0">
+                        {member.firstName[0]}{member.lastName[0]}
+                      </div>
+                      {member.firstName} {member.lastName}
+                      {count > 0 && <span className="ml-auto text-xs text-zinc-400">{count}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Bulk actions bar */}
-      {canValidate && feuilles.length > 0 && (
+      {canValidate && filteredFeuilles.length > 0 && (
         <Card className="!py-3 !px-4">
           <div className="flex items-center gap-3 flex-wrap">
             {hasSelection && (
@@ -234,7 +305,7 @@ export default function FeuillesHeuresPage() {
       )}
 
       <Card>
-        {feuilles.length === 0 ? (
+        {filteredFeuilles.length === 0 ? (
           <div className="text-center py-16">
             <Clock className="w-10 h-10 text-zinc-200 mx-auto mb-3" />
             <p className="text-sm text-zinc-500">Aucune feuille d&apos;heures</p>
@@ -269,7 +340,7 @@ export default function FeuillesHeuresPage() {
                 </tr>
               </thead>
               <tbody>
-                {feuilles.map((f) => {
+                {filteredFeuilles.map((f) => {
                   const statut = f.statut || (f.valide ? 'VALIDEE' : 'EN_ATTENTE');
                   return (
                     <tr key={f.id} className={`border-b border-zinc-50 last:border-0 ${selected.has(f.id) ? 'bg-brand-50/30' : ''}`}>
