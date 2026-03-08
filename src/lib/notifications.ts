@@ -25,7 +25,7 @@ export async function createNotification(
     });
 
     // Send Web Push notification (non-blocking)
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.stravon.fr';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://stravon-weld.vercel.app';
     sendPushToUser(userId, {
       title: PUSH_TITLES[type] || 'STRAVON',
       message,

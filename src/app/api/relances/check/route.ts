@@ -78,7 +78,7 @@ export async function POST() {
             // Send email to patron about overdue invoice
             if (patron.email) {
               try {
-                const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.stravon.fr';
+                const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://stravon-weld.vercel.app';
                 await sendEmail({
                   to: patron.email,
                   subject: `Facture ${facture.numero} en retard de ${joursRetard} jours`,

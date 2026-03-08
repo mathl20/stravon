@@ -38,7 +38,7 @@ export async function POST(request: NextRequest, { params }: Ctx) {
 
     const company = devis.company;
     const brandColor = company.primaryColor || '#1b40f5';
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.stravon.fr';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://stravon-weld.vercel.app';
     const pdfUrl = `${baseUrl}/api/devis/${id}/pdf`;
     const acceptUrl = `${baseUrl}/devis-accept/${acceptToken}`;
 

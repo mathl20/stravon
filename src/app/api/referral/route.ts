@@ -49,7 +49,7 @@ export async function GET() {
       },
     });
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.stravon.fr';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://stravon-weld.vercel.app';
 
     return NextResponse.json({
       data: {

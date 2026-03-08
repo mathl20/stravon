@@ -168,7 +168,7 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
               </div>
 
               <div style="text-align:center;margin-bottom:32px">
-                <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.stravon.fr'}/devis/${devis.id}" style="display:inline-block;padding:12px 32px;background:${brandColor};color:white;text-decoration:none;border-radius:10px;font-size:14px;font-weight:600">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://stravon-weld.vercel.app'}/devis/${devis.id}" style="display:inline-block;padding:12px 32px;background:${brandColor};color:white;text-decoration:none;border-radius:10px;font-size:14px;font-weight:600">
                   Voir le devis
                 </a>
               </div>
@@ -296,7 +296,7 @@ export async function POST(request: NextRequest, ctx: Ctx) {
               </div>
 
               <div style="text-align:center;margin-bottom:32px">
-                <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.stravon.fr'}/devis/${devis.id}" style="display:inline-block;padding:12px 32px;background:${brandColor};color:white;text-decoration:none;border-radius:10px;font-size:14px;font-weight:600">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://stravon-weld.vercel.app'}/devis/${devis.id}" style="display:inline-block;padding:12px 32px;background:${brandColor};color:white;text-decoration:none;border-radius:10px;font-size:14px;font-weight:600">
                   Voir le devis
                 </a>
               </div>

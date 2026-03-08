@@ -39,7 +39,7 @@ export async function POST(_: NextRequest, { params }: Ctx) {
 
     const company = facture.company;
     const brandColor = company.primaryColor || '#1b40f5';
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.stravon.fr';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://stravon-weld.vercel.app';
     const viewUrl = `${baseUrl}/facture-view/${viewToken}`;
     const pdfUrl = `${baseUrl}/api/factures/${id}/pdf`;
 
