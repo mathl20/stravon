@@ -1,12 +1,19 @@
 import { getStripe } from './stripe';
 import prisma from './prisma';
 
+// In-memory cache: companyId -> last sync timestamp
+const lastSyncMap = new Map<string, number>();
+const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+
 /**
  * Syncs the company's subscription data with Stripe.
- * Call this when loading subscription-sensitive pages to ensure data is fresh,
- * especially useful when webhooks haven't fired (local dev, manual Stripe changes).
+ * Throttled to once per 5 minutes per company to avoid excessive API calls.
  */
 export async function syncSubscriptionFromStripe(companyId: string): Promise<void> {
+  const now = Date.now();
+  const lastSync = lastSyncMap.get(companyId) || 0;
+  if (now - lastSync < SYNC_INTERVAL_MS) return;
+  lastSyncMap.set(companyId, now);
   const company = await prisma.company.findUnique({
     where: { id: companyId },
     select: {

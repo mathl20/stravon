@@ -24,7 +24,9 @@ export async function GET() {
       orderBy: { createdAt: 'asc' },
     });
 
-    return NextResponse.json({ data: members });
+    const res = NextResponse.json({ data: members });
+    res.headers.set('Cache-Control', 'private, max-age=15, stale-while-revalidate=30');
+    return res;
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });

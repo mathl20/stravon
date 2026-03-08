@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
       const topProfitable = [...profItems].sort((a, b) => b.marge - a.marge).slice(0, 5);
       const leastProfitable = [...profItems].sort((a, b) => a.tauxMarge - b.tauxMarge).slice(0, 5);
 
-      return NextResponse.json({
+      const advRes = NextResponse.json({
         advancedStats: {
           topClients,
           caEmployes,
@@ -156,6 +156,8 @@ export async function GET(request: NextRequest) {
           devisRelances: ((devisRelancesCount as any[])[0])?.count || 0,
         },
       });
+      advRes.headers.set('Cache-Control', 'private, max-age=60, stale-while-revalidate=120');
+      return advRes;
     }
 
     // ── BASIC STATS (fast, loaded first) ──
@@ -215,7 +217,7 @@ export async function GET(request: NextRequest) {
 
     const monthlyRevenue = monthlyData.length > 0 ? monthlyData[monthlyData.length - 1].revenue : 0;
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       data: {
         monthlyRevenue: isEmploye ? 0 : monthlyRevenue,
         yearlyRevenue: isEmploye ? 0 : (yearly._sum.amountTTC || 0),
@@ -228,6 +230,8 @@ export async function GET(request: NextRequest) {
         permissions: perms,
       },
     });
+    res.headers.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60');
+    return res;
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });

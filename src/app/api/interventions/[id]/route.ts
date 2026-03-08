@@ -22,7 +22,7 @@ export async function GET(_: NextRequest, { params }: Ctx) {
         items: true,
         client: true,
         createdBy: { select: { id: true, firstName: true, lastName: true } },
-        company: true,
+        company: { select: { tauxHoraire: true } },
         photos: { orderBy: { ordre: 'asc' } },
         materiels: { orderBy: { createdAt: 'desc' } },
         assignedUsers: { include: { user: { select: { id: true, firstName: true, lastName: true, email: true, role: true } } }, orderBy: { assignedAt: 'asc' } },

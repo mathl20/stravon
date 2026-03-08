@@ -42,7 +42,9 @@ export async function GET(request: NextRequest) {
       take: 100,
     });
 
-    return NextResponse.json({ data: devis });
+    const res = NextResponse.json({ data: devis });
+    res.headers.set('Cache-Control', 'private, max-age=15, stale-while-revalidate=30');
+    return res;
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });

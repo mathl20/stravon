@@ -32,7 +32,9 @@ export async function GET(request: NextRequest) {
       take: 200,
     });
 
-    return NextResponse.json({ data: clients });
+    const res = NextResponse.json({ data: clients });
+    res.headers.set('Cache-Control', 'private, max-age=15, stale-while-revalidate=30');
+    return res;
   } catch (error) {
     console.error('Get clients error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
