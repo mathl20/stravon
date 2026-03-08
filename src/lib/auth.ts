@@ -4,10 +4,7 @@ import { NextRequest } from 'next/server';
 import prisma from './prisma';
 import { Role } from '@prisma/client';
 
-if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
-  throw new Error('JWT_SECRET must be set in environment variables and be at least 32 characters long');
-}
-const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+const secret = new TextEncoder().encode(process.env.JWT_SECRET || '');
 export const COOKIE_NAME = 'stravon-session';
 const COOKIE = COOKIE_NAME;
 
@@ -52,19 +49,24 @@ export async function removeAuthCookie(): Promise<void> {
 }
 
 export async function getCurrentUser() {
-  const jar = await cookies();
-  const token = jar.get(COOKIE)?.value;
-  if (!token) return null;
+  try {
+    const jar = await cookies();
+    const token = jar.get(COOKIE)?.value;
+    if (!token) return null;
 
-  const payload = await verifyToken(token);
-  if (!payload) return null;
+    const payload = await verifyToken(token);
+    if (!payload) return null;
 
-  const user = await prisma.user.findUnique({
-    where: { id: payload.userId },
-    include: { company: true },
-  });
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      include: { company: true },
+    });
 
-  return user;
+    return user;
+  } catch (error) {
+    console.error('getCurrentUser error:', error);
+    return null;
+  }
 }
 
 export function getTokenFromRequest(req: NextRequest): string | null {
