@@ -92,8 +92,11 @@ export async function POST(request: NextRequest) {
       message: 'Compte créé. Vérifiez votre email pour activer votre compte.',
       requiresVerification: true,
     }, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Register error:', error);
-    return NextResponse.json({ error: 'Erreur lors de la création du compte' }, { status: 500 });
+    const message = error?.code === 'P2002'
+      ? 'Un compte avec ces informations existe déjà'
+      : error?.message || 'Erreur lors de la création du compte';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
