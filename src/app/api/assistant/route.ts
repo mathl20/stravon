@@ -140,39 +140,44 @@ AUTRES RÈGLES :
 
 async function callClaude(systemPrompt: string, userMessage: string) {
   if (!ANTHROPIC_API_KEY) {
-    return { actions: [], summary: 'Clé API Anthropic non configurée. Ajoutez ANTHROPIC_API_KEY dans .env.' };
+    return { actions: [], summary: 'Clé API Anthropic non configurée. Ajoutez ANTHROPIC_API_KEY dans les variables d\'environnement Vercel.' };
   }
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2048,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userMessage }],
-    }),
-  });
-
-  if (!response.ok) {
-    const err = await response.text();
-    console.error('Anthropic API error:', err);
-    return { actions: [], summary: 'Erreur de communication avec l\'IA. Veuillez réessayer.' };
-  }
-
-  const result = await response.json();
-  const text = result.content?.[0]?.text || '';
 
   try {
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('No JSON');
-    return JSON.parse(jsonMatch[0]);
-  } catch {
-    return { actions: [], summary: text || 'Réponse inattendue.' };
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2048,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMessage }],
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      console.error('Anthropic API error:', response.status, err);
+      return { actions: [], summary: `Erreur API Anthropic (${response.status}). Vérifiez votre clé API.` };
+    }
+
+    const result = await response.json();
+    const text = result.content?.[0]?.text || '';
+
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('No JSON');
+      return JSON.parse(jsonMatch[0]);
+    } catch {
+      return { actions: [], summary: text || 'Réponse inattendue.' };
+    }
+  } catch (err: any) {
+    console.error('Anthropic fetch error:', err);
+    return { actions: [], summary: `Erreur de connexion à l'IA: ${err.message}` };
   }
 }
 
@@ -238,8 +243,8 @@ export async function POST(request: NextRequest) {
     const aiResponse = await callClaude(systemPrompt, prompt);
 
     return NextResponse.json({ data: aiResponse });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Assistant analyze error:', error);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    return NextResponse.json({ error: error?.message || 'Erreur serveur' }, { status: 500 });
   }
 }

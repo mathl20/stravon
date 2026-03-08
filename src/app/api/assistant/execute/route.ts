@@ -452,8 +452,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ data: { results } });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Assistant execute error:', error);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    return NextResponse.json({ error: error?.message || 'Erreur serveur' }, { status: 500 });
   }
 }
