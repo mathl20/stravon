@@ -481,6 +481,8 @@ model Facture {
   @@index([clientId])
   @@index([status])
   @@index([companyId, status])
+  @@index([companyId, status, dateEcheance])
+  @@index([createdById])
   @@map("factures")
 }
 

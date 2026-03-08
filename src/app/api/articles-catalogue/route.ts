@@ -31,7 +31,9 @@ export async function GET(request: NextRequest) {
       take: 200,
     });
 
-    return NextResponse.json({ data: articles });
+    const res = NextResponse.json({ data: articles });
+    res.headers.set('Cache-Control', 'private, max-age=60, stale-while-revalidate=300');
+    return res;
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });

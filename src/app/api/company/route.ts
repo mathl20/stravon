@@ -14,7 +14,9 @@ export async function GET() {
     const company = await prisma.company.findUnique({ where: { id: user.companyId } });
     if (!company) return NextResponse.json({ error: 'Entreprise non trouvée' }, { status: 404 });
 
-    return NextResponse.json({ data: company });
+    const res = NextResponse.json({ data: company });
+    res.headers.set('Cache-Control', 'private, max-age=60, stale-while-revalidate=300');
+    return res;
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Erreur' }, { status: 500 });

@@ -48,20 +48,21 @@ export async function PUT(request: NextRequest, { params }: Ctx) {
     const { id } = await params;
     const body = await request.json();
 
-    const existing = await prisma.planning.findFirst({
-      where: { id, entrepriseId: user.companyId },
-    });
-    if (!existing) return NextResponse.json({ error: 'Créneau non trouvé' }, { status: 404 });
-
     const parsed = planningSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
 
     const { date, heureDebut, heureFin, utilisateurId, interventionId, statut } = parsed.data;
 
-    // Vérifier que l'utilisateur cible appartient à la même entreprise
-    const targetUser = await prisma.user.findFirst({
-      where: { id: utilisateurId, companyId: user.companyId },
-    });
+    // Vérifier existence du créneau et de l'utilisateur cible en parallèle
+    const [existing, targetUser] = await Promise.all([
+      prisma.planning.findFirst({
+        where: { id, entrepriseId: user.companyId },
+      }),
+      prisma.user.findFirst({
+        where: { id: utilisateurId, companyId: user.companyId },
+      }),
+    ]);
+    if (!existing) return NextResponse.json({ error: 'Créneau non trouvé' }, { status: 404 });
     if (!targetUser) return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
 
     const planning = await prisma.planning.update({

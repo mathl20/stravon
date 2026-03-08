@@ -27,7 +27,16 @@ export async function GET(request: NextRequest) {
 
     const clients = await prisma.client.findMany({
       where,
-      include: { _count: { select: { interventions: true } } },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        city: true,
+        createdAt: true,
+        _count: { select: { interventions: true } },
+      },
       orderBy: { createdAt: 'desc' },
       take: 200,
     });

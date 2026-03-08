@@ -60,19 +60,19 @@ export async function POST(request: NextRequest) {
 
     const { date, heureDebut, heureFin, utilisateurId, interventionId, statut } = parsed.data;
 
-    // Vérifier que l'utilisateur cible appartient à la même entreprise
-    const targetUser = await prisma.user.findFirst({
-      where: { id: utilisateurId, companyId: user.companyId },
-    });
+    // Vérifier que l'utilisateur et l'intervention appartiennent à la même entreprise
+    const [targetUser, intervention] = await Promise.all([
+      prisma.user.findFirst({
+        where: { id: utilisateurId, companyId: user.companyId },
+      }),
+      interventionId
+        ? prisma.intervention.findFirst({
+            where: { id: interventionId, companyId: user.companyId },
+          })
+        : null,
+    ]);
     if (!targetUser) return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
-
-    // Vérifier que l'intervention appartient à la même entreprise
-    if (interventionId) {
-      const intervention = await prisma.intervention.findFirst({
-        where: { id: interventionId, companyId: user.companyId },
-      });
-      if (!intervention) return NextResponse.json({ error: 'Intervention non trouvée' }, { status: 404 });
-    }
+    if (interventionId && !intervention) return NextResponse.json({ error: 'Intervention non trouvée' }, { status: 404 });
 
     const planning = await prisma.planning.create({
       data: {

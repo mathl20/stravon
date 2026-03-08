@@ -17,7 +17,9 @@ export async function GET() {
       orderBy: [{ category: 'asc' }, { label: 'asc' }],
     });
 
-    return NextResponse.json({ data: prestations });
+    const res = NextResponse.json({ data: prestations });
+    res.headers.set('Cache-Control', 'private, max-age=60, stale-while-revalidate=300');
+    return res;
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });

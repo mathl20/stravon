@@ -31,11 +31,12 @@ import {
   Package,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import dynamic from 'next/dynamic';
 import { StatCard } from '@/components/dashboard/stat-card';
-import { RevenueChart } from '@/components/dashboard/revenue-chart';
-import { HorizontalBarChart } from '@/components/dashboard/horizontal-bar-chart';
-import { PieChart } from '@/components/dashboard/pie-chart';
-import { ConversionCard } from '@/components/dashboard/conversion-card';
+const RevenueChart = dynamic(() => import('@/components/dashboard/revenue-chart').then(m => m.RevenueChart), { ssr: false, loading: () => <div className="h-72 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" /> });
+const HorizontalBarChart = dynamic(() => import('@/components/dashboard/horizontal-bar-chart').then(m => m.HorizontalBarChart), { ssr: false, loading: () => <div className="h-64 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" /> });
+const PieChart = dynamic(() => import('@/components/dashboard/pie-chart').then(m => m.PieChart), { ssr: false, loading: () => <div className="h-64 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" /> });
+const ConversionCard = dynamic(() => import('@/components/dashboard/conversion-card').then(m => m.ConversionCard), { ssr: false, loading: () => <div className="h-32 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" /> });
 import { DateRangePicker } from '@/components/dashboard/date-range-picker';
 import { Card, StatusBadge, PageLoader } from '@/components/ui';
 import { apiFetch, formatCurrency, formatDate } from '@/lib/utils';
