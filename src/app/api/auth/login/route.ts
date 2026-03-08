@@ -48,8 +48,11 @@ export async function POST(request: NextRequest) {
     await setAuthCookie(token);
 
     return NextResponse.json({ message: 'Connexion réussie' });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login error:', error);
-    return NextResponse.json({ error: 'Erreur de connexion' }, { status: 500 });
+    const message = error?.name === 'PrismaClientInitializationError'
+      ? 'Base de données inaccessible. Vérifiez DATABASE_URL.'
+      : error?.message || 'Erreur de connexion';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
