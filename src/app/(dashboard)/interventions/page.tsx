@@ -1,0 +1,135 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { Plus, Search, FileText, Trash2, Download } from 'lucide-react';
+import { Button, Card, StatusBadge, EmptyState, PageLoader } from '@/components/ui';
+import { apiFetch, formatCurrency, formatDate } from '@/lib/utils';
+import toast from 'react-hot-toast';
+import type { InterventionWithRelations } from '@/types';
+
+const STATUS_FILTERS = [
+  { value: '', label: 'Tous' },
+  { value: 'PENDING', label: 'Planifié' },
+  { value: 'EN_COURS', label: 'En cours' },
+  { value: 'TERMINE', label: 'Terminé' },
+  { value: 'INVOICED', label: 'Facturé' },
+  { value: 'PAID', label: 'Payé' },
+];
+
+export default function InterventionsPage() {
+  const router = useRouter();
+  const [interventions, setInterventions] = useState<InterventionWithRelations[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
+  const fetchData = useCallback((q: string, status: string) => {
+    const params = new URLSearchParams();
+    if (q) params.set('search', q);
+    if (status) params.set('status', status);
+    apiFetch<{ data: InterventionWithRelations[] }>(`/api/interventions?${params}`)
+      .then((r) => setInterventions(r.data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { fetchData('', ''); }, [fetchData]);
+
+  useEffect(() => {
+    const t = setTimeout(() => fetchData(search, statusFilter), 300);
+    return () => clearTimeout(t);
+  }, [search, statusFilter, fetchData]);
+
+  const handleDelete = async (id: string, ref: string) => {
+    if (!confirm(`Supprimer l'intervention ${ref} ?`)) return;
+    try {
+      await apiFetch(`/api/interventions/${id}`, { method: 'DELETE' });
+      toast.success('Intervention supprimée');
+      setInterventions((prev) => prev.filter((i) => i.id !== id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erreur');
+    }
+  };
+
+  if (loading) return <PageLoader />;
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="page-title">Interventions</h1>
+          <p className="page-subtitle">{interventions.length} intervention{interventions.length > 1 ? 's' : ''}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="secondary" href="/api/interventions/export" download onClick={() => toast.success('Téléchargement en cours...')}><Download className="w-4 h-4" /> Exporter</Button>
+          <Button href="/interventions/new"><Plus className="w-4 h-4" /> Nouvelle intervention</Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+          <input type="text" placeholder="Rechercher…" value={search} onChange={(e) => setSearch(e.target.value)} className="input-field pl-10" />
+        </div>
+        <div className="flex gap-1.5">
+          {STATUS_FILTERS.map((f) => (
+            <button key={f.value} onClick={() => setStatusFilter(f.value)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${statusFilter === f.value ? 'bg-zinc-900 text-white' : 'bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {interventions.length === 0 && !search && !statusFilter ? (
+        <EmptyState
+          icon={FileText}
+          title="Aucune intervention"
+          description="Créez votre première fiche d'intervention."
+          action={<Button href="/interventions/new"><Plus className="w-4 h-4" /> Créer une intervention</Button>}
+        />
+      ) : interventions.length === 0 ? (
+        <p className="text-sm text-zinc-400 text-center py-12">Aucun résultat</p>
+      ) : (
+        <Card padding={false}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-zinc-100">
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">Réf.</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">Titre</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide hidden md:table-cell">Client</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide hidden sm:table-cell">Date</th>
+                  <th className="text-center px-5 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">Statut</th>
+                  <th className="text-right px-5 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">TTC</th>
+                  <th className="px-5 py-3"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {interventions.map((inv) => (
+                  <tr key={inv.id} className="border-b border-zinc-50 hover:bg-zinc-50/60 transition-colors cursor-pointer"
+                    onClick={() => router.push(`/interventions/${inv.id}`)}>
+                    <td className="px-5 py-3.5 text-zinc-500 font-mono text-xs">{inv.reference}</td>
+                    <td className="px-5 py-3.5 font-medium text-zinc-900 max-w-[200px] truncate">{inv.title}</td>
+                    <td className="px-5 py-3.5 text-zinc-500 hidden md:table-cell">{inv.client.firstName} {inv.client.lastName}</td>
+                    <td className="px-5 py-3.5 text-zinc-500 hidden sm:table-cell">{formatDate(inv.date)}</td>
+                    <td className="px-5 py-3.5 text-center"><StatusBadge status={inv.status} /></td>
+                    <td className="px-5 py-3.5 text-right font-semibold text-zinc-700">{formatCurrency(inv.amountTTC)}</td>
+                    <td className="px-5 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => handleDelete(inv.id, inv.reference)}
+                        className="p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
