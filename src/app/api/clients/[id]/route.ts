@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { clientSchema } from '@/lib/validations';
-import { canManageClients, getEffectivePermissions } from '@/lib/permissions';
+import { canManageClients, getEffectivePermissions, isEmployeeRole } from '@/lib/permissions';
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -36,6 +36,30 @@ export async function GET(_: NextRequest, { params }: Ctx) {
       },
     });
     if (!client) return NextResponse.json({ error: 'Client non trouvé' }, { status: 404 });
+
+    const perms = getEffectivePermissions(user);
+    if (isEmployeeRole(perms)) {
+      // Strip contact info and financial data for employees
+      const stripped: any = {
+        ...client,
+        email: null,
+        phone: null,
+        notes: null,
+        // Remove devis/factures entirely
+        devis: [],
+        factures: [],
+        // Strip financial info from interventions
+        interventions: (client as any).interventions.map((inv: any) => ({
+          ...inv,
+          amountHT: undefined,
+          amountTTC: undefined,
+          tvaRate: undefined,
+          items: inv.items?.map((it: any) => ({ id: it.id, description: it.description, quantity: it.quantity, type: it.type })),
+        })),
+      };
+      return NextResponse.json({ data: stripped });
+    }
+
     return NextResponse.json({ data: client });
   } catch (error) {
     console.error(error);

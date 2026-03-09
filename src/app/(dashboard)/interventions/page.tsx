@@ -7,6 +7,8 @@ import { Button, Card, StatusBadge, EmptyState, PageLoader } from '@/components/
 import { apiFetch, formatCurrency, formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import type { InterventionWithRelations } from '@/types';
+import { usePermissions } from '@/lib/permissions-context';
+import { isEmployeeRole } from '@/lib/permissions';
 
 const STATUS_FILTERS = [
   { value: '', label: 'Tous' },
@@ -19,6 +21,8 @@ const STATUS_FILTERS = [
 
 export default function InterventionsPage() {
   const router = useRouter();
+  const perms = usePermissions();
+  const isEmp = isEmployeeRole(perms);
   const [interventions, setInterventions] = useState<InterventionWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -61,10 +65,12 @@ export default function InterventionsPage() {
           <h1 className="page-title">Interventions</h1>
           <p className="page-subtitle">{interventions.length} intervention{interventions.length > 1 ? 's' : ''}</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" href="/api/interventions/export" download onClick={() => toast.success('Téléchargement en cours...')}><Download className="w-4 h-4" /> Exporter</Button>
-          <Button href="/interventions/new"><Plus className="w-4 h-4" /> Nouvelle intervention</Button>
-        </div>
+        {!isEmp && (
+          <div className="flex gap-2">
+            <Button variant="secondary" href="/api/interventions/export" download onClick={() => toast.success('Téléchargement en cours...')}><Download className="w-4 h-4" /> Exporter</Button>
+            <Button href="/interventions/new"><Plus className="w-4 h-4" /> Nouvelle intervention</Button>
+          </div>
+        )}
       </div>
 
       {/* Filters */}
@@ -87,8 +93,8 @@ export default function InterventionsPage() {
         <EmptyState
           icon={FileText}
           title="Aucune intervention"
-          description="Créez votre première fiche d'intervention."
-          action={<Button href="/interventions/new"><Plus className="w-4 h-4" /> Créer une intervention</Button>}
+          description={isEmp ? "Aucune intervention ne vous est assignée." : "Créez votre première fiche d'intervention."}
+          action={!isEmp ? <Button href="/interventions/new"><Plus className="w-4 h-4" /> Créer une intervention</Button> : undefined}
         />
       ) : interventions.length === 0 ? (
         <p className="text-sm text-zinc-400 text-center py-12">Aucun résultat</p>
@@ -103,8 +109,8 @@ export default function InterventionsPage() {
                   <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide hidden md:table-cell">Client</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide hidden sm:table-cell">Date</th>
                   <th className="text-center px-5 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">Statut</th>
-                  <th className="text-right px-5 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">TTC</th>
-                  <th className="px-5 py-3"></th>
+                  {!isEmp && <th className="text-right px-5 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">TTC</th>}
+                  {!isEmp && <th className="px-5 py-3"></th>}
                 </tr>
               </thead>
               <tbody>
@@ -116,13 +122,15 @@ export default function InterventionsPage() {
                     <td className="px-5 py-3.5 text-zinc-500 hidden md:table-cell">{inv.client.firstName} {inv.client.lastName}</td>
                     <td className="px-5 py-3.5 text-zinc-500 hidden sm:table-cell">{formatDate(inv.date)}</td>
                     <td className="px-5 py-3.5 text-center"><StatusBadge status={inv.status} /></td>
-                    <td className="px-5 py-3.5 text-right font-semibold text-zinc-700">{formatCurrency(inv.amountTTC)}</td>
-                    <td className="px-5 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => handleDelete(inv.id, inv.reference)}
-                        className="p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
+                    {!isEmp && <td className="px-5 py-3.5 text-right font-semibold text-zinc-700">{formatCurrency(inv.amountTTC)}</td>}
+                    {!isEmp && (
+                      <td className="px-5 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={() => handleDelete(inv.id, inv.reference)}
+                          className="p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

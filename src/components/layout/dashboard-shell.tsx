@@ -5,14 +5,15 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Sidebar } from './sidebar';
 import { Header } from './header';
-import { cn } from '@/lib/utils';
+import { cn, apiFetch } from '@/lib/utils';
 import { PermissionsProvider } from '@/lib/permissions-context';
 import { PlanProvider } from '@/lib/plan-context';
 import { getPlanFromPriceId } from '@/lib/plans';
 import { PlanGate } from '@/components/plan-gate';
-import { FlaskConical, ArrowRight, AlertTriangle, Clock } from 'lucide-react';
+import { FlaskConical, ArrowRight, AlertTriangle, Clock, Mail, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
-export function DashboardShell({ children, user, company, isDemo = false, subscriptionStatus = 'inactive', isAdminUser = false, stripePriceId = null, trialEndsAt = null }: {
+export function DashboardShell({ children, user, company, isDemo = false, subscriptionStatus = 'inactive', isAdminUser = false, stripePriceId = null, trialEndsAt = null, emailVerified = true }: {
   children: React.ReactNode;
   user: { firstName: string; lastName: string; role: string; permissions: string[] };
   company: { name: string };
@@ -21,9 +22,12 @@ export function DashboardShell({ children, user, company, isDemo = false, subscr
   isAdminUser?: boolean;
   stripePriceId?: string | null;
   trialEndsAt?: string | null;
+  emailVerified?: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [emailBannerDismissed, setEmailBannerDismissed] = useState(false);
+  const [resendingEmail, setResendingEmail] = useState(false);
   const pathname = usePathname();
 
   // Close mobile menu on route change
@@ -41,15 +45,29 @@ export function DashboardShell({ children, user, company, isDemo = false, subscr
     return () => { document.body.style.overflow = ''; };
   }, [mobileOpen]);
 
+  const isPaidSubscriber = isDemo || subscriptionStatus === 'active';
   const currentPlan = isDemo
-    ? { tier: 2, name: 'Business' }
-    : getPlanFromPriceId(stripePriceId, subscriptionStatus);
+    ? { tier: 2, name: 'Business', isPaidSubscriber: true }
+    : { ...getPlanFromPriceId(stripePriceId, subscriptionStatus), isPaidSubscriber };
 
   const trialDaysLeft = trialEndsAt
     ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : 0;
   const showTrialBanner = !isDemo && !!trialEndsAt && trialDaysLeft > 0;
-  const hasBanner = isDemo || showTrialBanner;
+  const showEmailBanner = !isDemo && !emailVerified && !emailBannerDismissed;
+  const hasBanner = isDemo || showTrialBanner || showEmailBanner;
+
+  const handleResendVerification = async () => {
+    setResendingEmail(true);
+    try {
+      await apiFetch('/api/auth/resend-verification', { method: 'POST', body: JSON.stringify({}) });
+      toast.success('Email de vérification renvoyé !');
+    } catch {
+      toast.error('Impossible de renvoyer l\'email. Réessayez plus tard.');
+    } finally {
+      setResendingEmail(false);
+    }
+  };
 
   return (
     <PermissionsProvider value={user.permissions}>
@@ -87,6 +105,32 @@ export function DashboardShell({ children, user, company, isDemo = false, subscr
               >
                 Voir les offres <ArrowRight className="w-3 h-3" />
               </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Email verification banner */}
+        {showEmailBanner && !isDemo && !showTrialBanner && (
+          <div className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
+            <div className="flex items-center justify-center gap-3 px-4 py-2">
+              <Mail className="w-4 h-4 flex-shrink-0" />
+              <p className="text-xs sm:text-sm font-medium">
+                Email non vérifié — vérifiez votre boîte mail
+              </p>
+              <button
+                onClick={handleResendVerification}
+                disabled={resendingEmail}
+                className="flex items-center gap-1 px-3 py-1 text-xs font-semibold bg-white text-blue-700 rounded-full hover:bg-blue-50 transition-colors flex-shrink-0 disabled:opacity-50"
+              >
+                {resendingEmail ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                Renvoyer l&apos;email
+              </button>
+              <button
+                onClick={() => setEmailBannerDismissed(true)}
+                className="text-white/70 hover:text-white text-xs font-medium ml-1"
+              >
+                ✕
+              </button>
             </div>
           </div>
         )}

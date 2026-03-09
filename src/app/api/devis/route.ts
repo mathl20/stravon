@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { devisSchema } from '@/lib/validations';
 import { generateDevisReference, calculateTTC } from '@/lib/utils';
-import { getEffectivePermissions, hasPermission, PERMISSIONS } from '@/lib/permissions';
+import { getEffectivePermissions, hasPermission, isEmployeeRole, PERMISSIONS } from '@/lib/permissions';
 
 export async function GET(request: NextRequest) {
   try {
@@ -55,6 +55,8 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: 'Non authentifie' }, { status: 401 });
+    const perms = getEffectivePermissions(user);
+    if (isEmployeeRole(perms)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
 
     const body = await request.json();
     const parsed = devisSchema.safeParse(body);

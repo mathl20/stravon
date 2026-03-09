@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { interventionSchema } from '@/lib/validations';
 import { generateReference, calculateTTC } from '@/lib/utils';
-import { getEffectivePermissions, hasPermission, PERMISSIONS } from '@/lib/permissions';
+import { getEffectivePermissions, hasPermission, isEmployeeRole, PERMISSIONS } from '@/lib/permissions';
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,9 +17,13 @@ export async function GET(request: NextRequest) {
     const status = sp.get('status');
     const search = sp.get('search') || '';
 
+    // Employees only see interventions assigned to them
+    const isEmp = isEmployeeRole(perms);
     const where: Record<string, unknown> = {
       companyId: user.companyId,
-      ...(!hasPermission(perms, PERMISSIONS.INTERVENTIONS_MANAGE) && { createdById: user.id }),
+      ...(isEmp
+        ? { assignedUsers: { some: { userId: user.id } } }
+        : (!hasPermission(perms, PERMISSIONS.INTERVENTIONS_MANAGE) && { createdById: user.id })),
       ...(status && { status: status as 'PENDING' | 'INVOICED' | 'PAID' }),
       ...(search && {
         OR: [
@@ -51,6 +55,8 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    const perms = getEffectivePermissions(user);
+    if (isEmployeeRole(perms)) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
 
     const body = await request.json();
     const parsed = interventionSchema.safeParse(body);

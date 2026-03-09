@@ -7,6 +7,8 @@ import { ArrowLeft, Pencil, FileText, Plus, FileSignature, Receipt, Camera } fro
 import { Button, Card, StatusBadge, PageLoader } from '@/components/ui';
 import { apiFetch, formatCurrency, formatDate, getDevisStatusLabel, getDevisStatusColor } from '@/lib/utils';
 import type { Client, InterventionWithRelations } from '@/types';
+import { usePermissions } from '@/lib/permissions-context';
+import { isEmployeeRole } from '@/lib/permissions';
 
 type ClientDetail = Client & {
   interventions: (InterventionWithRelations & { photos?: { id: string; data: string }[] })[];
@@ -17,6 +19,8 @@ type ClientDetail = Client & {
 export default function ClientDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const perms = usePermissions();
+  const isEmp = isEmployeeRole(perms);
   const [client, setClient] = useState<ClientDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'interventions' | 'devis' | 'factures' | 'photos'>('interventions');
@@ -34,12 +38,15 @@ export default function ClientDetailPage() {
     (inv.photos || []).map((p) => ({ ...p, interventionRef: inv.reference, interventionId: inv.id }))
   );
 
-  const tabs = [
+  const allTabs = [
     { key: 'interventions' as const, label: 'Interventions', icon: FileText, count: client.interventions.length },
-    { key: 'devis' as const, label: 'Devis', icon: FileSignature, count: client.devis?.length || 0 },
-    { key: 'factures' as const, label: 'Factures', icon: Receipt, count: client.factures?.length || 0 },
+    ...(!isEmp ? [
+      { key: 'devis' as const, label: 'Devis', icon: FileSignature, count: client.devis?.length || 0 },
+      { key: 'factures' as const, label: 'Factures', icon: Receipt, count: client.factures?.length || 0 },
+    ] : []),
     { key: 'photos' as const, label: 'Photos', icon: Camera, count: allPhotos.length },
   ];
+  const tabs = allTabs;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -47,9 +54,9 @@ export default function ClientDetailPage() {
         <button onClick={() => router.push('/clients')} className="btn-ghost !p-2"><ArrowLeft className="w-4 h-4" /></button>
         <div className="flex-1">
           <h1 className="page-title">{client.firstName} {client.lastName}</h1>
-          <p className="page-subtitle">{client.email || 'Pas d\'email'} {client.phone ? `· ${client.phone}` : ''}</p>
+          {!isEmp && <p className="page-subtitle">{client.email || 'Pas d\'email'} {client.phone ? `· ${client.phone}` : ''}</p>}
         </div>
-        <Button variant="secondary" href={`/clients/${id}/edit`}><Pencil className="w-4 h-4" /> Modifier</Button>
+        {!isEmp && <Button variant="secondary" href={`/clients/${id}/edit`}><Pencil className="w-4 h-4" /> Modifier</Button>}
       </div>
 
       {/* Info card */}
@@ -59,8 +66,10 @@ export default function ClientDetailPage() {
             ['Adresse', client.address || '—'],
             ['Code postal', client.postalCode || '—'],
             ['Ville', client.city || '—'],
-            ['Email', client.email || '—'],
-            ['Téléphone', client.phone || '—'],
+            ...(!isEmp ? [
+              ['Email', client.email || '—'],
+              ['Téléphone', client.phone || '—'],
+            ] : []),
             ['Créé le', formatDate(client.createdAt)],
           ].map(([label, value]) => (
             <div key={label}>
@@ -103,7 +112,7 @@ export default function ClientDetailPage() {
         <>
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-zinc-900">Interventions ({client.interventions.length})</h2>
-            <Button variant="secondary" href="/interventions/new"><Plus className="w-4 h-4" /> Nouvelle</Button>
+            {!isEmp && <Button variant="secondary" href="/interventions/new"><Plus className="w-4 h-4" /> Nouvelle</Button>}
           </div>
           {client.interventions.length === 0 ? (
             <Card><p className="text-sm text-zinc-400 text-center py-8">Aucune intervention pour ce client</p></Card>
@@ -117,7 +126,7 @@ export default function ClientDetailPage() {
                       <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">Titre</th>
                       <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide hidden sm:table-cell">Date</th>
                       <th className="text-center px-5 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">Statut</th>
-                      <th className="text-right px-5 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">Montant</th>
+                      {!isEmp && <th className="text-right px-5 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">Montant</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -128,7 +137,7 @@ export default function ClientDetailPage() {
                         <td className="px-5 py-3 font-medium text-zinc-900">{inv.title}</td>
                         <td className="px-5 py-3 text-zinc-500 hidden sm:table-cell">{formatDate(inv.date)}</td>
                         <td className="px-5 py-3 text-center"><StatusBadge status={inv.status} /></td>
-                        <td className="px-5 py-3 text-right font-semibold text-zinc-700">{formatCurrency(inv.amountTTC)}</td>
+                        {!isEmp && <td className="px-5 py-3 text-right font-semibold text-zinc-700">{formatCurrency(inv.amountTTC)}</td>}
                       </tr>
                     ))}
                   </tbody>

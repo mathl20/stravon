@@ -145,7 +145,7 @@ function RegisterForm() {
     setLoading(true);
     setError(null);
     try {
-      await apiFetch('/api/auth/register', {
+      const data = await apiFetch<{ redirect?: string }>('/api/auth/register', {
         method: 'POST',
         body: JSON.stringify({
           ...form,
@@ -154,8 +154,8 @@ function RegisterForm() {
           ...(affCode ? { affiliateCode: affCode } : {}),
         }),
       });
-      toast.success('Compte créé ! Vérifiez votre email.');
-      router.push('/verify-email');
+      toast.success('Compte créé !');
+      router.push(data.redirect || '/choose-plan');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erreur lors de la création du compte';
       setError(msg);

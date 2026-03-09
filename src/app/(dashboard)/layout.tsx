@@ -30,6 +30,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
     subscriptionStatus = 'trialing';
   }
 
+  // If user has never chosen a plan (no trial, no subscription), redirect to plan selection
+  if (!isDemo && !isAdmin(user.email) && subscriptionStatus !== 'active' && !trialEndsAt && !stripePriceId) {
+    redirect('/choose-plan');
+  }
+
   return (
     <DashboardShell
       user={{ firstName: user.firstName, lastName: user.lastName, role: user.role, permissions }}
@@ -39,6 +44,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       isAdminUser={isAdmin(user.email)}
       stripePriceId={stripePriceId}
       trialEndsAt={isTrialActive ? trialEndsAt.toISOString() : null}
+      emailVerified={user.emailVerified}
     >
       {children}
     </DashboardShell>

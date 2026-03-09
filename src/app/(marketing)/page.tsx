@@ -75,9 +75,51 @@ const PRICING = [
   },
 ];
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://stravon.fr';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Stravon',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  description: 'Logiciel de gestion pour artisans du batiment. Devis, factures, planning, equipes et suivi de chantier.',
+  url: BASE_URL,
+  offers: [
+    {
+      '@type': 'Offer',
+      name: 'Starter',
+      price: '19',
+      priceCurrency: 'EUR',
+      description: '1 a 2 utilisateurs — Devis, factures, planning, relances automatiques',
+    },
+    {
+      '@type': 'Offer',
+      name: 'Pro',
+      price: '39',
+      priceCurrency: 'EUR',
+      description: '3 a 8 utilisateurs — Assistant IA, equipe, feuilles d\'heures, signature QR',
+    },
+    {
+      '@type': 'Offer',
+      name: 'Business',
+      price: '79',
+      priceCurrency: 'EUR',
+      description: '9 a 20 utilisateurs — Multi-equipes, statistiques avancees, support dedie',
+    },
+  ],
+  aggregateRating: undefined,
+};
+
 export default function LandingPage() {
   return (
     <>
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       {/* Hero */}
       <section className="m-hero">
         <div className="m-hero-badge">

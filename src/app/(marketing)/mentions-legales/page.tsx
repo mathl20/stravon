@@ -1,6 +1,11 @@
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = { title: 'Mentions légales — Stravon' };
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://stravon.fr';
+
+export const metadata: Metadata = {
+  title: 'Mentions legales',
+  alternates: { canonical: `${BASE_URL}/mentions-legales` },
+};
 
 export default function MentionsLegalesPage() {
   return (

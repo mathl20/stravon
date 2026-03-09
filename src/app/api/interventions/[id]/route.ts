@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { interventionSchema } from '@/lib/validations';
 import { calculateTTC } from '@/lib/utils';
-import { canEditIntervention, canDeleteIntervention, getEffectivePermissions, hasPermission, PERMISSIONS } from '@/lib/permissions';
+import { canEditIntervention, canDeleteIntervention, getEffectivePermissions, hasPermission, isEmployeeRole, PERMISSIONS } from '@/lib/permissions';
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -16,8 +16,15 @@ export async function GET(_: NextRequest, { params }: Ctx) {
     const perms = getEffectivePermissions(user);
     const { id } = await params;
 
+    const isEmp = isEmployeeRole(perms);
     const intervention = await prisma.intervention.findFirst({
-      where: { id, companyId: user.companyId, ...(!hasPermission(perms, PERMISSIONS.INTERVENTIONS_MANAGE) && { createdById: user.id }) } as any,
+      where: {
+        id,
+        companyId: user.companyId,
+        ...(isEmp
+          ? { assignedUsers: { some: { userId: user.id } } }
+          : (!hasPermission(perms, PERMISSIONS.INTERVENTIONS_MANAGE) && { createdById: user.id })),
+      } as any,
       include: {
         items: true,
         client: true,
@@ -54,7 +61,36 @@ export async function GET(_: NextRequest, { params }: Ctx) {
     const tauxMarge = intervention.amountHT > 0 ? Math.round((marge / intervention.amountHT) * 100) : 0;
     const rentabilite = { coutMateriaux, coutMO, marge, tauxMarge, tauxHoraire, totalHeures, coutAchatMateriaux, prixReventeMateriaux, margeMateriaux, tauxMargeMateriaux };
 
-    return NextResponse.json({ data: { ...intervention, rentabilite } });
+    const result = { ...intervention, rentabilite } as any;
+
+    // Strip sensitive data for employees
+    if (isEmp) {
+      // Remove financial data
+      delete result.amountHT;
+      delete result.amountTTC;
+      delete result.tvaRate;
+      delete result.rentabilite;
+      delete result.coutMainOeuvre;
+      result.items = (result.items || []).map((it: any) => ({
+        id: it.id, description: it.description, quantity: it.quantity, type: it.type,
+      }));
+      // Remove devis/factures
+      delete result.devis;
+      delete result.factures;
+      // Strip client contact info
+      if (result.client) {
+        result.client = {
+          id: result.client.id,
+          firstName: result.client.firstName,
+          lastName: result.client.lastName,
+          address: result.client.address,
+          city: result.client.city,
+          postalCode: result.client.postalCode,
+        };
+      }
+    }
+
+    return NextResponse.json({ data: result });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
@@ -82,6 +118,11 @@ export async function PUT(request: NextRequest, { params }: Ctx) {
     if (body.status && Object.keys(body).length === 1) {
       await prisma.intervention.updateMany({ where: { id, companyId: user.companyId }, data: { status: body.status } });
       return NextResponse.json({ message: 'Statut mis à jour' });
+    }
+
+    // Employees can only update status, not full edit
+    if (isEmployeeRole(perms)) {
+      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
     const parsed = interventionSchema.safeParse(body);

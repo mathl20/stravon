@@ -7,9 +7,13 @@ import { Button, Card, EmptyState, PageLoader } from '@/components/ui';
 import { apiFetch, formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import type { ClientWithCount } from '@/types';
+import { usePermissions } from '@/lib/permissions-context';
+import { isEmployeeRole } from '@/lib/permissions';
 
 export default function ClientsPage() {
   const router = useRouter();
+  const perms = usePermissions();
+  const isEmp = isEmployeeRole(perms);
   const [clients, setClients] = useState<ClientWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -48,10 +52,12 @@ export default function ClientsPage() {
           <h1 className="page-title">Clients</h1>
           <p className="page-subtitle">{clients.length} client{clients.length > 1 ? 's' : ''}</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" href="/api/clients/export" download onClick={() => toast.success('Téléchargement en cours...')}><Download className="w-4 h-4" /> Exporter</Button>
-          <Button href="/clients/new"><Plus className="w-4 h-4" /> Nouveau client</Button>
-        </div>
+        {!isEmp && (
+          <div className="flex gap-2">
+            <Button variant="secondary" href="/api/clients/export" download onClick={() => toast.success('Téléchargement en cours...')}><Download className="w-4 h-4" /> Exporter</Button>
+            <Button href="/clients/new"><Plus className="w-4 h-4" /> Nouveau client</Button>
+          </div>
+        )}
       </div>
 
       {/* Search */}
@@ -70,8 +76,8 @@ export default function ClientsPage() {
         <EmptyState
           icon={Users}
           title="Aucun client"
-          description="Créez votre premier client pour commencer à gérer vos interventions."
-          action={<Button href="/clients/new"><Plus className="w-4 h-4" /> Créer un client</Button>}
+          description={isEmp ? "Aucun client disponible." : "Créez votre premier client pour commencer à gérer vos interventions."}
+          action={!isEmp ? <Button href="/clients/new"><Plus className="w-4 h-4" /> Créer un client</Button> : undefined}
         />
       ) : clients.length === 0 && search ? (
         <p className="text-sm text-zinc-400 text-center py-12">Aucun résultat pour &quot;{search}&quot;</p>
@@ -82,10 +88,10 @@ export default function ClientsPage() {
               <thead>
                 <tr className="border-b border-zinc-100">
                   <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">Nom</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide hidden sm:table-cell">Téléphone</th>
+                  {!isEmp && <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide hidden sm:table-cell">Téléphone</th>}
                   <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide hidden md:table-cell">Ville</th>
                   <th className="text-center px-5 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wide">Interventions</th>
-                  <th className="px-5 py-3"></th>
+                  {!isEmp && <th className="px-5 py-3"></th>}
                 </tr>
               </thead>
               <tbody>
@@ -94,17 +100,19 @@ export default function ClientsPage() {
                     onClick={() => router.push(`/clients/${c.id}`)}>
                     <td className="px-5 py-3.5">
                       <p className="font-medium text-zinc-900">{c.firstName} {c.lastName}</p>
-                      {c.email && <p className="text-xs text-zinc-400">{c.email}</p>}
+                      {!isEmp && c.email && <p className="text-xs text-zinc-400">{c.email}</p>}
                     </td>
-                    <td className="px-5 py-3.5 text-zinc-500 hidden sm:table-cell">{c.phone || '—'}</td>
+                    {!isEmp && <td className="px-5 py-3.5 text-zinc-500 hidden sm:table-cell">{c.phone || '—'}</td>}
                     <td className="px-5 py-3.5 text-zinc-500 hidden md:table-cell">{c.city || '—'}</td>
                     <td className="px-5 py-3.5 text-center text-zinc-600 font-medium">{c._count.interventions}</td>
-                    <td className="px-5 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => handleDelete(c.id, `${c.firstName} ${c.lastName}`)}
-                        className="p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
+                    {!isEmp && (
+                      <td className="px-5 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={() => handleDelete(c.id, `${c.firstName} ${c.lastName}`)}
+                          className="p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

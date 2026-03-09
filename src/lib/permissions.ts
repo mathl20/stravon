@@ -73,6 +73,19 @@ export function hasPermission(perms: string[], permission: string): boolean {
 }
 
 // ──────────────────────────────────────────
+// Role-level helpers
+// ──────────────────────────────────────────
+
+/** Returns true when a user has employee-level permissions only (no manage rights). */
+export function isEmployeeRole(perms: string[]): boolean {
+  return !hasPermission(perms, PERMISSIONS.INTERVENTIONS_MANAGE)
+    && !hasPermission(perms, PERMISSIONS.DEVIS_MANAGE)
+    && !hasPermission(perms, PERMISSIONS.FACTURES_MANAGE)
+    && !hasPermission(perms, PERMISSIONS.CLIENTS_MANAGE)
+    && !hasPermission(perms, PERMISSIONS.SETTINGS_MANAGE);
+}
+
+// ──────────────────────────────────────────
 // Permission check functions (accept string[])
 // ──────────────────────────────────────────
 

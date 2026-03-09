@@ -5,7 +5,7 @@
  * Tier 1 = Pro      (39€/mois) — 3-8 utilisateurs
  * Tier 2 = Business (79€/mois) — 9-20 utilisateurs
  *
- * Essai gratuit 14 jours = accès Pro
+ * Essai gratuit 14 jours = accès au plan choisi par l'utilisateur
  */
 
 export const PLAN_TIERS: Record<string, { tier: number; name: string }> = {
@@ -15,7 +15,11 @@ export const PLAN_TIERS: Record<string, { tier: number; name: string }> = {
 };
 
 export function getPlanFromPriceId(priceId: string | null, subscriptionStatus?: string): { tier: number; name: string } {
-  // Trial = Pro access
+  // Trial: use the selected plan tier (stored as stripePriceId)
+  if (subscriptionStatus === 'trialing' && priceId && PLAN_TIERS[priceId]) {
+    return PLAN_TIERS[priceId];
+  }
+  // Fallback for legacy trials without a specific plan
   if (subscriptionStatus === 'trialing') return { tier: 1, name: 'Pro' };
   if (!priceId) return { tier: 0, name: 'Starter' };
   return PLAN_TIERS[priceId] || { tier: 0, name: 'Starter' };

@@ -1,6 +1,11 @@
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = { title: 'Conditions Générales de Vente — Stravon' };
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://stravon.fr';
+
+export const metadata: Metadata = {
+  title: 'Conditions Generales de Vente',
+  alternates: { canonical: `${BASE_URL}/cgv` },
+};
 
 export default function CGVPage() {
   return (

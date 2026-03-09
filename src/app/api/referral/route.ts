@@ -10,6 +10,12 @@ export async function GET() {
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
 
+    // Only paid subscribers can access referral program
+    const company = user.company as any;
+    if (company.subscriptionStatus !== 'active') {
+      return NextResponse.json({ error: 'Abonnement payant requis pour accéder au programme de parrainage.' }, { status: 403 });
+    }
+
     // Ensure user has a referral code
     let referralCode = (user as any).referralCode as string | null;
     if (!referralCode) {

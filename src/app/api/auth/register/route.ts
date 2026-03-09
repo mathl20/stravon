@@ -9,6 +9,7 @@ import { getDefaultPrestations } from '@/lib/prestations';
 import { generateReferralCode } from '@/lib/referral';
 import { sendEmail } from '@/lib/mailer';
 import { verifyEmailTemplate } from '@/lib/email-templates';
+import { createToken, setAuthCookie, createRefreshToken, setRefreshCookie } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,8 +38,6 @@ export async function POST(request: NextRequest) {
     const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
     const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
-    const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 days
-
     // Generate unique affiliate code for the new company
     const generateAffiliateCode = () => `AFF-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
     let newAffiliateCode = generateAffiliateCode();
@@ -58,7 +57,6 @@ export async function POST(request: NextRequest) {
     const result = await prisma.$transaction(async (tx) => {
       const company = await tx.company.create({ data: {
         name: companyName, email, metier: selectedMetier,
-        trialEndsAt,
         affiliateCode: newAffiliateCode,
         ...(affiliateReferrerId ? { affiliateReferredById: affiliateReferrerId } : {}),
         ...(siret ? { siret } : {}),
@@ -103,18 +101,23 @@ export async function POST(request: NextRequest) {
       return { user, company };
     });
 
-    // Send verification email
+    // Send verification email (non-blocking — user can resend from dashboard)
     const emailContent = verifyEmailTemplate(rawToken, firstName);
     try {
       await sendEmail({ to: email, subject: emailContent.subject, html: emailContent.html });
     } catch (emailErr) {
       console.error('[REGISTER] Failed to send verification email to', email, emailErr);
-      // Account is created, but email failed — user can use "resend verification"
     }
 
+    // Auto-login: create session so user can proceed to plan selection
+    const token = await createToken({ userId: result.user.id, email, role: 'PATRON', companyId: result.company.id });
+    const refreshToken = await createRefreshToken(result.user.id);
+    await setAuthCookie(token);
+    await setRefreshCookie(refreshToken);
+
     return NextResponse.json({
-      message: 'Compte créé. Vérifiez votre email pour activer votre compte.',
-      requiresVerification: true,
+      message: 'Compte créé.',
+      redirect: '/choose-plan',
     }, { status: 201 });
   } catch (error: any) {
     console.error('Register error:', error);

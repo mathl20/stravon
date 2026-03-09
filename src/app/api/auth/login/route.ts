@@ -35,14 +35,8 @@ export async function POST(request: NextRequest) {
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) return NextResponse.json({ error: 'Email ou mot de passe incorrect' }, { status: 401 });
 
-    // Block login if email is not verified (skip for demo accounts)
-    if (!user.emailVerified && !user.company.isDemo) {
-      return NextResponse.json({
-        error: 'Veuillez vérifier votre adresse email avant de vous connecter. Consultez votre boîte mail.',
-        code: 'EMAIL_NOT_VERIFIED',
-        email: user.email,
-      }, { status: 403 });
-    }
+    // Email verification is no longer blocking — users can log in
+    // and will see a banner in the dashboard if email is not verified
 
     const token = await createToken({ userId: user.id, email: user.email, role: user.role, companyId: user.companyId });
     const refreshToken = await createRefreshToken(user.id);

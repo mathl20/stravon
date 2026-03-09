@@ -171,7 +171,7 @@ export default function SubscriptionPage() {
         <p className="text-zinc-500 text-sm max-w-lg mx-auto">
           {hasActive
             ? 'Changez de plan ou gerez votre facturation en quelques clics.'
-            : 'Essai gratuit de 14 jours avec acces au plan Pro. Sans engagement, annulez a tout moment.'}
+            : 'Sans engagement, annulez a tout moment.'}
         </p>
       </div>
 
@@ -341,7 +341,7 @@ export default function SubscriptionPage() {
 
       {/* Bottom note */}
       <p className="text-center text-xs text-zinc-400 mt-8">
-        Essai gratuit 14 jours (plan Pro). Paiement securise par Stripe. Annulez a tout moment.
+        Paiement securise par Stripe. Annulez a tout moment.
       </p>
     </div>
   );

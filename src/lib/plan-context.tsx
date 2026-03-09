@@ -5,9 +5,10 @@ import { createContext, useContext } from 'react';
 interface PlanInfo {
   tier: number;
   name: string;
+  isPaidSubscriber: boolean;
 }
 
-const PlanContext = createContext<PlanInfo>({ tier: 0, name: 'Solo' });
+const PlanContext = createContext<PlanInfo>({ tier: 0, name: 'Solo', isPaidSubscriber: false });
 
 export const PlanProvider = PlanContext.Provider;
 

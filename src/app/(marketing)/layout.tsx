@@ -2,13 +2,26 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { MarketingNav } from './marketing-nav';
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://stravon.fr';
+
 export const metadata: Metadata = {
-  title: 'Stravon — Gestion simplifiée pour artisans du bâtiment',
-  description: 'Devis, factures, planning, équipes et suivi de chantier — tout centralisé dans un seul outil conçu pour les artisans du bâtiment.',
+  title: 'Stravon — Logiciel de gestion pour artisans du batiment',
+  description: 'Gerez vos devis, factures, planning, equipes et chantiers dans un seul outil. Assistant IA integre. Essai gratuit 14 jours.',
   openGraph: {
-    title: 'Stravon — Gestion simplifiée pour artisans du bâtiment',
-    description: 'Devis, factures, planning, équipes et suivi de chantier — tout centralisé dans un seul outil conçu pour les artisans du bâtiment.',
+    title: 'Stravon — Logiciel de gestion pour artisans du batiment',
+    description: 'Gerez vos devis, factures, planning, equipes et chantiers dans un seul outil. Assistant IA integre. Essai gratuit 14 jours.',
     type: 'website',
+    url: BASE_URL,
+    siteName: 'Stravon',
+    locale: 'fr_FR',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Stravon — Logiciel de gestion pour artisans du batiment',
+    description: 'Gerez vos devis, factures, planning, equipes et chantiers dans un seul outil. Assistant IA integre. Essai gratuit 14 jours.',
+  },
+  alternates: {
+    canonical: BASE_URL,
   },
 };
 

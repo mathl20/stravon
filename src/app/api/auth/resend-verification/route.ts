@@ -6,6 +6,7 @@ import prisma from '@/lib/prisma';
 import { sendEmail } from '@/lib/mailer';
 import { verifyEmailTemplate } from '@/lib/email-templates';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +19,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email } = await request.json();
+    // Support both authenticated (from dashboard banner) and unauthenticated (from login page) requests
+    let email: string | undefined;
+    try {
+      const body = await request.json();
+      email = body.email;
+    } catch {
+      // empty body — try auth
+    }
+
+    if (!email) {
+      const currentUser = await getCurrentUser();
+      if (currentUser) email = currentUser.email;
+    }
+
     if (!email) return NextResponse.json({ error: 'Email requis' }, { status: 400 });
 
     const user = await prisma.user.findUnique({ where: { email } });

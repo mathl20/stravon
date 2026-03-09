@@ -14,7 +14,7 @@ import type { InterventionFull } from '@/types';
 import { PhotoGallery } from '@/components/interventions/photo-gallery';
 import { PhotoUpload } from '@/components/interventions/photo-upload';
 import { SignaturePad } from '@/components/interventions/signature-pad';
-import { canEditIntervention, canManageFactures, canViewProfitability, hasPermission, PERMISSIONS } from '@/lib/permissions';
+import { canEditIntervention, canManageFactures, canViewProfitability, hasPermission, isEmployeeRole, PERMISSIONS } from '@/lib/permissions';
 import { usePermissions } from '@/lib/permissions-context';
 import { ProfitabilityCard } from '@/components/interventions/profitability-card';
 
@@ -28,6 +28,7 @@ export default function InterventionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const perms = usePermissions();
+  const isEmp = isEmployeeRole(perms);
   const [inv, setInv] = useState<InterventionFull | null>(null);
   const [loading, setLoading] = useState(true);
   const [showSignature, setShowSignature] = useState(false);
@@ -142,7 +143,7 @@ export default function InterventionDetailPage() {
                 <a.icon className="w-4 h-4" /> {a.label}
               </Button>
             ))}
-          {inv.status === 'INVOICED' && canManageFactures(perms) && (
+          {!isEmp && inv.status === 'INVOICED' && canManageFactures(perms) && (
             <Button variant="brand" onClick={() => router.push(`/factures?from_intervention=${id}`)}>
               <Receipt className="w-4 h-4" /> Générer facture
             </Button>
@@ -150,8 +151,8 @@ export default function InterventionDetailPage() {
           {inv.status !== 'PAID' && inv.status !== 'INVOICED' && (
             <Button variant="brand" href={`/interventions/${id}/chantier`}><Hammer className="w-4 h-4" /> Mode chantier</Button>
           )}
-          <Button variant="secondary" href={`/api/interventions/${id}/pdf`} target="_blank" rel="noreferrer"><FileDown className="w-4 h-4" /> PDF</Button>
-          <Button variant="secondary" href={`/interventions/${id}/edit`}><Pencil className="w-4 h-4" /> Modifier</Button>
+          {!isEmp && <Button variant="secondary" href={`/api/interventions/${id}/pdf`} target="_blank" rel="noreferrer"><FileDown className="w-4 h-4" /> PDF</Button>}
+          {!isEmp && <Button variant="secondary" href={`/interventions/${id}/edit`}><Pencil className="w-4 h-4" /> Modifier</Button>}
         </div>
       </div>
 
@@ -164,10 +165,12 @@ export default function InterventionDetailPage() {
               <p className="text-[11px] text-zinc-400 uppercase tracking-wide font-semibold">Statut</p>
               <p className="text-sm font-semibold text-zinc-900 mt-1">{getStatusLabel(inv.status)}</p>
             </div>
-            <div className="bg-white border border-zinc-200 rounded-xl p-3">
-              <p className="text-[11px] text-zinc-400 uppercase tracking-wide font-semibold">Montant TTC</p>
-              <p className="text-sm font-semibold text-zinc-900 mt-1">{formatCurrency(inv.amountTTC)}</p>
-            </div>
+            {!isEmp && (
+              <div className="bg-white border border-zinc-200 rounded-xl p-3">
+                <p className="text-[11px] text-zinc-400 uppercase tracking-wide font-semibold">Montant TTC</p>
+                <p className="text-sm font-semibold text-zinc-900 mt-1">{formatCurrency(inv.amountTTC)}</p>
+              </div>
+            )}
             <div className="bg-white border border-zinc-200 rounded-xl p-3">
               <p className="text-[11px] text-zinc-400 uppercase tracking-wide font-semibold">Heures</p>
               <p className="text-sm font-semibold text-zinc-900 mt-1">{(inv.rentabilite?.totalHeures || 0).toFixed(1)}h</p>
@@ -228,8 +231,8 @@ export default function InterventionDetailPage() {
                     <tr className="border-b border-zinc-100">
                       <th className="text-left px-5 py-2.5 text-xs font-semibold text-zinc-400 uppercase tracking-wide">Description</th>
                       <th className="text-center px-5 py-2.5 text-xs font-semibold text-zinc-400 uppercase tracking-wide">Qté</th>
-                      <th className="text-right px-5 py-2.5 text-xs font-semibold text-zinc-400 uppercase tracking-wide">Prix unit.</th>
-                      <th className="text-right px-5 py-2.5 text-xs font-semibold text-zinc-400 uppercase tracking-wide">Total</th>
+                      {!isEmp && <th className="text-right px-5 py-2.5 text-xs font-semibold text-zinc-400 uppercase tracking-wide">Prix unit.</th>}
+                      {!isEmp && <th className="text-right px-5 py-2.5 text-xs font-semibold text-zinc-400 uppercase tracking-wide">Total</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -237,29 +240,31 @@ export default function InterventionDetailPage() {
                       <tr key={item.id} className="border-b border-zinc-50">
                         <td className="px-5 py-3 text-zinc-700">{item.description}</td>
                         <td className="px-5 py-3 text-center text-zinc-500">{item.quantity}</td>
-                        <td className="px-5 py-3 text-right text-zinc-500">{formatCurrency(item.unitPrice)}</td>
-                        <td className="px-5 py-3 text-right font-medium text-zinc-700">{formatCurrency(item.total)}</td>
+                        {!isEmp && <td className="px-5 py-3 text-right text-zinc-500">{formatCurrency(item.unitPrice)}</td>}
+                        {!isEmp && <td className="px-5 py-3 text-right font-medium text-zinc-700">{formatCurrency(item.total)}</td>}
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                <div className="px-5 py-4 border-t border-zinc-100 flex justify-end">
-                  <div className="w-56 space-y-1 text-sm">
-                    <div className="flex justify-between text-zinc-500">
-                      <span>Total HT</span><span className="font-medium">{formatCurrency(inv.amountHT)}</span>
-                    </div>
-                    <div className="flex justify-between text-zinc-500">
-                      <span>TVA ({inv.tvaRate}%)</span><span className="font-medium">{formatCurrency(tva)}</span>
-                    </div>
-                    <div className="flex justify-between text-zinc-900 font-bold text-base pt-1.5 border-t border-zinc-200">
-                      <span>Total TTC</span><span>{formatCurrency(inv.amountTTC)}</span>
+                {!isEmp && (
+                  <div className="px-5 py-4 border-t border-zinc-100 flex justify-end">
+                    <div className="w-56 space-y-1 text-sm">
+                      <div className="flex justify-between text-zinc-500">
+                        <span>Total HT</span><span className="font-medium">{formatCurrency(inv.amountHT)}</span>
+                      </div>
+                      <div className="flex justify-between text-zinc-500">
+                        <span>TVA ({inv.tvaRate}%)</span><span className="font-medium">{formatCurrency(tva)}</span>
+                      </div>
+                      <div className="flex justify-between text-zinc-900 font-bold text-base pt-1.5 border-t border-zinc-200">
+                        <span>Total TTC</span><span>{formatCurrency(inv.amountTTC)}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </Card>
 
               {/* Linked Devis */}
-              {inv.devis && (
+              {!isEmp && inv.devis && (
                 <Card>
                   <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-3">Devis lié</h3>
                   <Link href={`/devis/${inv.devis.id}`} className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 hover:bg-zinc-100 transition-colors group">
@@ -273,7 +278,7 @@ export default function InterventionDetailPage() {
               )}
 
               {/* Linked Factures */}
-              {inv.factures && inv.factures.length > 0 && (
+              {!isEmp && inv.factures && inv.factures.length > 0 && (
                 <Card>
                   <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-3">
                     Facture{inv.factures.length > 1 ? 's' : ''} liée{inv.factures.length > 1 ? 's' : ''}
@@ -410,7 +415,7 @@ export default function InterventionDetailPage() {
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-medium text-zinc-900">{m.nom}</span>
                         <span className="text-xs text-zinc-400">× {m.quantite}</span>
-                        {m.prixUnitaire > 0 && (
+                        {!isEmp && m.prixUnitaire > 0 && (
                           <span className="text-xs text-zinc-500">({formatCurrency(m.prixUnitaire)}/u)</span>
                         )}
                       </div>
@@ -516,8 +521,8 @@ export default function InterventionDetailPage() {
               <p className="text-sm font-semibold text-zinc-900 group-hover:text-brand-600 transition-colors">
                 {inv.client.firstName} {inv.client.lastName}
               </p>
-              {inv.client.phone && <p className="text-xs text-zinc-500 mt-0.5">{inv.client.phone}</p>}
-              {inv.client.email && <p className="text-xs text-zinc-500">{inv.client.email}</p>}
+              {!isEmp && inv.client.phone && <p className="text-xs text-zinc-500 mt-0.5">{inv.client.phone}</p>}
+              {!isEmp && inv.client.email && <p className="text-xs text-zinc-500">{inv.client.email}</p>}
               {inv.client.city && <p className="text-xs text-zinc-400 mt-0.5">{inv.client.postalCode} {inv.client.city}</p>}
             </Link>
           </Card>

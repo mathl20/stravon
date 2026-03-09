@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    const { priceId } = await request.json();
+    const { priceId, returnPath } = await request.json();
     if (!priceId) {
       return NextResponse.json({ error: 'priceId requis' }, { status: 400 });
     }
@@ -82,8 +82,8 @@ export async function POST(request: Request) {
       mode: 'subscription',
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${appUrl}/subscription?success=true`,
-      cancel_url: `${appUrl}/subscription?canceled=true`,
+      success_url: returnPath ? `${appUrl}${returnPath}?subscription=success` : `${appUrl}/subscription?success=true`,
+      cancel_url: returnPath ? `${appUrl}${returnPath}?subscription=canceled` : `${appUrl}/subscription?canceled=true`,
       metadata: {
         companyId: company.id,
       },

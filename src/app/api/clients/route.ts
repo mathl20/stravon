@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { clientSchema } from '@/lib/validations';
-import { canManageClients, getEffectivePermissions } from '@/lib/permissions';
+import { canManageClients, getEffectivePermissions, isEmployeeRole } from '@/lib/permissions';
 
 export async function GET(request: NextRequest) {
   try {
@@ -41,7 +41,13 @@ export async function GET(request: NextRequest) {
       take: 200,
     });
 
-    const res = NextResponse.json({ data: clients });
+    const perms = getEffectivePermissions(user);
+    // Strip contact info for employees
+    const data = isEmployeeRole(perms)
+      ? clients.map((c) => ({ ...c, email: null, phone: null }))
+      : clients;
+
+    const res = NextResponse.json({ data });
     res.headers.set('Cache-Control', 'private, max-age=15, stale-while-revalidate=30');
     return res;
   } catch (error) {

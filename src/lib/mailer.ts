@@ -1,5 +1,4 @@
 import { Resend } from 'resend';
-import nodemailer from 'nodemailer';
 
 interface SendEmailOptions {
   to: string;
@@ -8,49 +7,37 @@ interface SendEmailOptions {
   replyTo?: string;
 }
 
-const useResend = !!process.env.RESEND_API_KEY;
-
 export async function sendEmail({ to, subject, html, replyTo }: SendEmailOptions) {
-  const fromAddress = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@stravon.fr';
+  const apiKey = process.env.RESEND_API_KEY;
+
+  if (!apiKey) {
+    console.error('[MAILER] RESEND_API_KEY is not set — skipping email send');
+    throw new Error('Email non configuré. Ajoutez RESEND_API_KEY dans vos variables d\'environnement Vercel.');
+  }
+
+  // Resend requires a verified domain or uses onboarding@resend.dev for testing
+  const fromAddress = process.env.SMTP_FROM || 'noreply@stravon.fr';
   const from = `STRAVON <${fromAddress}>`;
 
-  console.log(`[MAILER] Sending email to=${to} subject="${subject}" provider=${useResend ? 'resend' : 'smtp'}`);
+  console.log(`[MAILER] Sending email to=${to} subject="${subject}" from="${from}"`);
 
   try {
-    if (useResend) {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      const { error } = await resend.emails.send({
-        from,
-        to,
-        subject,
-        html,
-        replyTo: replyTo || undefined,
-      });
-      if (error) {
-        throw new Error(`Resend error: ${JSON.stringify(error)}`);
-      }
-    } else {
-      if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-        throw new Error('Email non configuré. Ajoutez RESEND_API_KEY ou SMTP_HOST/SMTP_USER/SMTP_PASS dans vos variables d\'environnement.');
-      }
+    const resend = new Resend(apiKey);
+    const { data, error } = await resend.emails.send({
+      from,
+      to,
+      subject,
+      html,
+      replyTo: replyTo || undefined,
+    });
 
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: Number(process.env.SMTP_PORT) || 587,
-        secure: process.env.SMTP_SECURE === 'true',
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
-        },
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 15000,
-      });
-
-      await transporter.sendMail({ from, to, subject, html, replyTo });
+    if (error) {
+      console.error(`[MAILER] Resend API error:`, JSON.stringify(error));
+      throw new Error(`Resend error: ${error.message || JSON.stringify(error)}`);
     }
 
-    console.log(`[MAILER] Email sent successfully to=${to}`);
+    console.log(`[MAILER] Email sent successfully to=${to} id=${data?.id}`);
+    return data;
   } catch (error) {
     console.error(`[MAILER] Failed to send email to=${to}:`, error);
     throw error;

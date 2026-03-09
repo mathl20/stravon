@@ -10,6 +10,12 @@ export async function GET() {
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: 'Non authentifie' }, { status: 401 });
 
+    // Only paid subscribers can access affiliate program
+    const userCompany = user.company as any;
+    if (userCompany.subscriptionStatus !== 'active') {
+      return NextResponse.json({ error: 'Abonnement payant requis pour accéder au programme d\'affiliation.' }, { status: 403 });
+    }
+
     let company = await prisma.company.findUnique({
       where: { id: user.companyId },
       select: {
