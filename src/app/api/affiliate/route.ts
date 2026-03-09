@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 
+import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
@@ -9,15 +10,33 @@ export async function GET() {
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: 'Non authentifie' }, { status: 401 });
 
-    const company = await prisma.company.findUnique({
+    let company = await prisma.company.findUnique({
       where: { id: user.companyId },
       select: {
+        id: true,
         affiliateCode: true,
         affiliateBalance: true,
       },
     });
 
     if (!company) return NextResponse.json({ error: 'Entreprise introuvable' }, { status: 404 });
+
+    // Auto-generate affiliate code for existing companies that don't have one
+    if (!company.affiliateCode) {
+      const generateCode = () => `AFF-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+      let code = generateCode();
+      for (let i = 0; i < 5; i++) {
+        const exists = await prisma.company.findFirst({ where: { affiliateCode: code } });
+        if (!exists) break;
+        code = generateCode();
+      }
+      const updated = await prisma.company.update({
+        where: { id: company.id },
+        data: { affiliateCode: code },
+        select: { id: true, affiliateCode: true, affiliateBalance: true },
+      });
+      company = updated;
+    }
 
     // Get referred companies (filleuls)
     const referredCompanies = await prisma.company.findMany({

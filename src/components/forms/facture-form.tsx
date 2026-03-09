@@ -140,43 +140,54 @@ export function FactureForm({ facture, defaultClientId, defaultItems }: FactureF
 
         <div className="space-y-3">
           {items.map((item, i) => (
-            <div key={i} className="flex items-start gap-3 p-4 bg-zinc-50/80 rounded-xl border border-zinc-100">
-              <div className="flex-1 min-w-0">
-                <input
-                  placeholder="Description"
-                  value={item.description}
-                  onChange={(e) => updateItem(i, 'description', e.target.value)}
-                  className="input-field text-sm"
-                />
+            <div key={i} className="p-4 bg-zinc-50/80 rounded-xl border border-zinc-100">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <label className="text-xs text-zinc-400 mb-1 block sm:hidden">Description</label>
+                  <input
+                    placeholder="Description"
+                    value={item.description}
+                    onChange={(e) => updateItem(i, 'description', e.target.value)}
+                    className="input-field text-sm relative z-10"
+                  />
+                </div>
+                <div className="grid grid-cols-3 sm:flex gap-3 sm:gap-3 items-end">
+                  <div className="sm:w-20">
+                    <label className="text-xs text-zinc-400 mb-1 block sm:hidden">Quantité</label>
+                    <input
+                      type="number"
+                      placeholder="Qte"
+                      value={item.quantity}
+                      onChange={(e) => updateItem(i, 'quantity', Number(e.target.value))}
+                      onFocus={(e) => e.target.select()}
+                      className="input-field text-sm text-center"
+                      min="0.01"
+                      step="0.01"
+                    />
+                  </div>
+                  <div className="sm:w-28">
+                    <label className="text-xs text-zinc-400 mb-1 block sm:hidden">Prix unit.</label>
+                    <input
+                      type="number"
+                      placeholder="Prix unit."
+                      value={item.unitPrice}
+                      onChange={(e) => updateItem(i, 'unitPrice', Number(e.target.value))}
+                      onFocus={(e) => e.target.select()}
+                      className="input-field text-sm text-right"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                  <div className="flex items-center justify-end gap-2">
+                    <div className="py-2.5 text-sm font-medium text-zinc-700 text-right whitespace-nowrap">
+                      {formatCurrency(item.quantity * item.unitPrice)}
+                    </div>
+                    <button type="button" onClick={() => removeItem(i)} className="p-2 text-zinc-400 hover:text-red-500 transition-colors">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="w-20">
-                <input
-                  type="number"
-                  placeholder="Qte"
-                  value={item.quantity}
-                  onChange={(e) => updateItem(i, 'quantity', Number(e.target.value))}
-                  className="input-field text-sm text-center"
-                  min="0.01"
-                  step="0.01"
-                />
-              </div>
-              <div className="w-28">
-                <input
-                  type="number"
-                  placeholder="Prix unit."
-                  value={item.unitPrice}
-                  onChange={(e) => updateItem(i, 'unitPrice', Number(e.target.value))}
-                  className="input-field text-sm text-right"
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-              <div className="w-24 py-2.5 text-sm font-medium text-zinc-700 text-right">
-                {formatCurrency(item.quantity * item.unitPrice)}
-              </div>
-              <button type="button" onClick={() => removeItem(i)} className="p-2 text-zinc-400 hover:text-red-500 transition-colors mt-0.5">
-                <Trash2 className="w-4 h-4" />
-              </button>
             </div>
           ))}
         </div>

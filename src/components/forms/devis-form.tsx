@@ -442,57 +442,71 @@ export function DevisForm({ devis }: DevisFormProps) {
             const marginPercent = hasMargin && item.coefMarge ? Math.round((item.coefMarge - 1) * 100) : 0;
             return (
               <div key={i} className="p-4 bg-zinc-50/80 rounded-xl border border-zinc-100 space-y-2">
-                <div className="flex items-start gap-3">
-                  <select
-                    value={item.type}
-                    onChange={(e) => updateItem(i, 'type', e.target.value)}
-                    className={`flex-shrink-0 text-[10px] font-semibold px-2 py-1 rounded-lg border-0 cursor-pointer ${lt.color}`}
-                  >
-                    {LINE_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
-                    ))}
-                  </select>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                  <div className="flex items-center gap-2 sm:block">
+                    <select
+                      value={item.type}
+                      onChange={(e) => updateItem(i, 'type', e.target.value)}
+                      className={`flex-shrink-0 text-[10px] font-semibold px-2 py-1 rounded-lg border-0 cursor-pointer ${lt.color}`}
+                    >
+                      {LINE_TYPES.map((t) => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                    </select>
+                    <button type="button" onClick={() => removeItem(i)} className="p-2 text-zinc-400 hover:text-red-500 transition-colors sm:hidden ml-auto">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                   <div className="flex-1 min-w-0">
+                    <label className="text-xs text-zinc-400 mb-1 block sm:hidden">Description</label>
                     <input
                       placeholder="Description"
                       value={item.description}
                       onChange={(e) => updateItem(i, 'description', e.target.value)}
-                      className="input-field text-sm"
+                      className="input-field text-sm relative z-10"
                     />
                   </div>
-                  <div className="w-20">
-                    <input
-                      type="number"
-                      placeholder="Qté"
-                      value={item.quantity}
-                      onChange={(e) => updateItem(i, 'quantity', Number(e.target.value))}
-                      className="input-field text-sm text-center"
-                      min="0.01"
-                      step="0.01"
-                    />
+                  <div className="grid grid-cols-3 sm:flex gap-3 sm:gap-3 items-end">
+                    <div className="sm:w-20">
+                      <label className="text-xs text-zinc-400 mb-1 block sm:hidden">Quantité</label>
+                      <input
+                        type="number"
+                        placeholder="Qté"
+                        value={item.quantity}
+                        onChange={(e) => updateItem(i, 'quantity', Number(e.target.value))}
+                        onFocus={(e) => e.target.select()}
+                        className="input-field text-sm text-center"
+                        min="0.01"
+                        step="0.01"
+                      />
+                    </div>
+                    <div className="sm:w-28">
+                      <label className="text-xs text-zinc-400 mb-1 block sm:hidden">{isMateriel ? 'Prix revente' : 'Prix unit.'}</label>
+                      <input
+                        type="number"
+                        placeholder={isMateriel ? 'Prix revente' : 'Prix unit.'}
+                        value={item.unitPrice}
+                        onChange={(e) => updateItem(i, 'unitPrice', Number(e.target.value))}
+                        onFocus={(e) => e.target.select()}
+                        className="input-field text-sm text-right"
+                        min="0"
+                        step="0.01"
+                        readOnly={isMateriel && item.prixAchat != null && item.prixAchat > 0}
+                      />
+                    </div>
+                    <div className="flex items-center justify-end gap-2">
+                      <div className="py-2.5 text-sm font-medium text-zinc-700 text-right whitespace-nowrap">
+                        {formatCurrency(item.quantity * item.unitPrice)}
+                      </div>
+                      <button type="button" onClick={() => removeItem(i)} className="p-2 text-zinc-400 hover:text-red-500 transition-colors hidden sm:block">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="w-28">
-                    <input
-                      type="number"
-                      placeholder={isMateriel ? 'Prix revente' : 'Prix unit.'}
-                      value={item.unitPrice}
-                      onChange={(e) => updateItem(i, 'unitPrice', Number(e.target.value))}
-                      className="input-field text-sm text-right"
-                      min="0"
-                      step="0.01"
-                      readOnly={isMateriel && item.prixAchat != null && item.prixAchat > 0}
-                    />
-                  </div>
-                  <div className="w-24 py-2.5 text-sm font-medium text-zinc-700 text-right">
-                    {formatCurrency(item.quantity * item.unitPrice)}
-                  </div>
-                  <button type="button" onClick={() => removeItem(i)} className="p-2 text-zinc-400 hover:text-red-500 transition-colors mt-0.5">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
                 </div>
                 {/* Material margin fields */}
                 {isMateriel && (
-                  <div className="flex items-center gap-3 ml-[72px]">
+                  <div className="flex flex-wrap items-center gap-3 sm:ml-[72px]">
                     <div className="flex items-center gap-1.5">
                       <label className="text-[11px] text-zinc-400 whitespace-nowrap">Achat HT</label>
                       <input
@@ -500,6 +514,7 @@ export function DevisForm({ devis }: DevisFormProps) {
                         placeholder="Prix achat"
                         value={item.prixAchat ?? ''}
                         onChange={(e) => updateItem(i, 'prixAchat', e.target.value ? Number(e.target.value) : null)}
+                        onFocus={(e) => e.target.select()}
                         className="input-field text-xs text-right w-24"
                         min="0"
                         step="0.01"
@@ -512,6 +527,7 @@ export function DevisForm({ devis }: DevisFormProps) {
                         placeholder="1.5"
                         value={item.coefMarge ?? ''}
                         onChange={(e) => updateItem(i, 'coefMarge', e.target.value ? Number(e.target.value) : null)}
+                        onFocus={(e) => e.target.select()}
                         className="input-field text-xs text-center w-16"
                         min="1"
                         step="0.1"

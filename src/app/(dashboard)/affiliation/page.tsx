@@ -30,7 +30,7 @@ export default function AffiliationPage() {
   }, []);
 
   const affiliateLink = data?.affiliateCode
-    ? `${window.location.origin}/register?aff=${data.affiliateCode}`
+    ? `${window.location.origin}?ref=${data.affiliateCode}`
     : '';
 
   const copyLink = async () => {

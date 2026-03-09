@@ -51,6 +51,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Affiliate link: /?ref=AFF-XXXX → /register?aff=AFF-XXXX
+  if (pathname === '/') {
+    const refParam = request.nextUrl.searchParams.get('ref');
+    if (refParam && refParam.startsWith('AFF-')) {
+      const registerUrl = new URL('/register', request.url);
+      registerUrl.searchParams.set('aff', refParam);
+      return NextResponse.redirect(registerUrl);
+    }
+  }
+
   const token = getTokenFromRequest(request);
   let payload = token ? await verifyToken(token) : null;
   let refreshCookieHeaders: string[] = [];
