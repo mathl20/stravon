@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Users, FileText, Settings, LogOut, PanelLeftClose, PanelLeftOpen, Zap, UsersRound, Clock, CalendarDays, FileSignature, Receipt, Sparkles, X, Wrench, Palmtree, Gift, CreditCard, ShieldCheck, LifeBuoy, Lock, UserCircle, Link2 } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, LogOut, PanelLeftClose, PanelLeftOpen, Zap, UsersRound, Clock, CalendarDays, FileSignature, Receipt, Sparkles, X, Wrench, Palmtree, Gift, CreditCard, ShieldCheck, LifeBuoy, UserCircle, Link2 } from 'lucide-react';
 import { canEditSettings, canManageTeam, canManageFactures, canViewClients, hasPermission, PERMISSIONS } from '@/lib/permissions';
 import { usePlan } from '@/lib/plan-context';
-import { getRequiredTierForRoute, TIER_PLAN_NAME } from '@/lib/plans';
+import { getRequiredTierForRoute } from '@/lib/plans';
 
 interface SidebarProps {
   companyName: string;
@@ -24,15 +24,15 @@ const NAV_ITEMS = [
   { href: '/interventions', label: 'Interventions', icon: FileText, showFor: (p: string[]) => hasPermission(p, PERMISSIONS.INTERVENTIONS_VIEW) },
   { href: '/devis', label: 'Devis', icon: FileSignature, showFor: (p: string[]) => hasPermission(p, PERMISSIONS.DEVIS_VIEW) },
   { href: '/factures', label: 'Factures', icon: Receipt, showFor: (p: string[]) => canManageFactures(p) },
-{ href: '/feuilles-heures', label: 'Feuilles d\'heures', icon: Clock, showFor: (p: string[]) => hasPermission(p, PERMISSIONS.TIMESHEETS_VIEW) },
-  { href: '/conges', label: 'Congés', icon: Palmtree, showFor: () => true },
+  { href: '/feuilles-heures', label: 'Feuilles d\'heures', icon: Clock, showFor: (p: string[]) => hasPermission(p, PERMISSIONS.TIMESHEETS_VIEW) },
+  { href: '/conges', label: 'Congés', icon: Palmtree, showFor: (p: string[]) => canEditSettings(p) },
   { href: '/planning', label: 'Planning', icon: CalendarDays, showFor: (p: string[]) => hasPermission(p, PERMISSIONS.PLANNING_VIEW) },
-  { href: '/prestations', label: 'Prestations', icon: Wrench, showFor: (p: string[]) => canEditSettings(p) },
+  { href: '/prestations', label: 'Prestations', icon: Wrench, showFor: () => true },
   { href: '/assistant', label: 'Assistant IA', icon: Sparkles, showFor: (p: string[]) => hasPermission(p, PERMISSIONS.CLIENTS_MANAGE) || hasPermission(p, PERMISSIONS.INTERVENTIONS_MANAGE) || hasPermission(p, PERMISSIONS.DEVIS_MANAGE) },
-  { href: '/parrainage', label: 'Parrainage', icon: Gift, showFor: () => true },
+  { href: '/parrainage', label: 'Parrainage', icon: Gift, showFor: (p: string[]) => canEditSettings(p) },
   { href: '/affiliation', label: 'Affiliation', icon: Link2, showFor: (p: string[]) => canEditSettings(p) },
   { href: '/team', label: 'Équipe', icon: UsersRound, showFor: (p: string[]) => canManageTeam(p) },
-  { href: '/support', label: 'Support', icon: LifeBuoy, showFor: () => true },
+  { href: '/support', label: 'Support', icon: LifeBuoy, showFor: (p: string[]) => canEditSettings(p) },
   { href: '/subscription', label: 'Abonnement', icon: CreditCard, showFor: (p: string[]) => canEditSettings(p) },
   { href: '/settings', label: 'Paramètres', icon: Settings, showFor: (p: string[]) => canEditSettings(p) },
 ];
@@ -46,7 +46,13 @@ export function Sidebar({ companyName, collapsed, onToggle, permissions, onLinkC
     window.location.href = '/login';
   };
 
-  const visibleNav = NAV_ITEMS.filter((item) => item.showFor(permissions));
+  const visibleNav = NAV_ITEMS.filter((item) => {
+    if (!item.showFor(permissions)) return false;
+    // Hide items that require a higher plan tier
+    const requiredTier = getRequiredTierForRoute(item.href);
+    if (currentTier < requiredTier) return false;
+    return true;
+  });
   const isCollapsed = isMobile ? false : collapsed;
 
   return (
@@ -84,34 +90,19 @@ export function Sidebar({ companyName, collapsed, onToggle, permissions, onLinkC
         <nav className="py-2 px-3 space-y-0.5">
           {visibleNav.map((item) => {
             const active = pathname === item.href || pathname.startsWith(item.href + '/');
-            const requiredTier = getRequiredTierForRoute(item.href);
-            const isLocked = currentTier < requiredTier;
-            const requiredPlan = TIER_PLAN_NAME[requiredTier];
             return (
-              <Link key={item.href} href={item.href} title={isCollapsed ? (isLocked ? `${item.label} (${requiredPlan})` : item.label) : undefined}
+              <Link key={item.href} href={item.href} title={isCollapsed ? item.label : undefined}
                 onClick={onLinkClick}
                 className={cn(
                   'flex items-center gap-3 px-3 rounded-xl text-[13px] font-medium transition-all duration-150',
                   isMobile ? 'py-3.5 min-h-[44px]' : 'py-2.5',
                   active
                     ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/25'
-                    : isLocked
-                    ? 'text-zinc-600 hover:bg-white/[0.04] hover:text-zinc-500'
                     : 'text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-200 active:bg-white/[0.1]',
                   isCollapsed && 'justify-center px-0 w-10 h-10 mx-auto'
                 )}>
-                <item.icon className={cn('w-[18px] h-[18px] flex-shrink-0', isLocked && !active && 'opacity-50')} />
-                {!isCollapsed && (
-                  <>
-                    <span className={cn(isLocked && !active && 'opacity-50')}>{item.label}</span>
-                    {isLocked && (
-                      <span className="ml-auto flex items-center gap-1 text-[10px] text-zinc-600">
-                        <Lock className="w-3 h-3" />
-                        <span className="hidden xl:inline">{requiredPlan}</span>
-                      </span>
-                    )}
-                  </>
-                )}
+                <item.icon className="w-[18px] h-[18px] flex-shrink-0" />
+                {!isCollapsed && <span>{item.label}</span>}
               </Link>
             );
           })}
