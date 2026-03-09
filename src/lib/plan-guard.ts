@@ -13,7 +13,12 @@ export async function requirePlanTier(minTier: number) {
   }
 
   const company = user.company as any;
-  const plan = getPlanFromPriceId(company.stripePriceId, company.subscriptionStatus);
+  // Check free trial
+  let effectiveStatus = company.subscriptionStatus;
+  if (effectiveStatus !== 'active' && company.trialEndsAt && new Date(company.trialEndsAt) > new Date()) {
+    effectiveStatus = 'trialing';
+  }
+  const plan = getPlanFromPriceId(company.stripePriceId, effectiveStatus);
 
   if (plan.tier < minTier) {
     const planNames: Record<number, string> = { 0: 'Starter', 1: 'Pro', 2: 'Business' };

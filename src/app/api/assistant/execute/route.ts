@@ -191,8 +191,11 @@ export async function POST(request: NextRequest) {
 
             let items = Array.isArray(action.items) && action.items.length > 0 ? [...action.items] : [{ description: action.title || 'Prestation', quantity: 1, unitPrice: tauxHoraire }];
 
-            // Apply company hourly rate to any item with unitPrice=0
+            // Apply company hourly rate to non-material items with unitPrice=0, calc material resale
             items = items.map((it: any) => {
+              if (it.type === 'materiel' && it.prixAchat && it.coefMarge) {
+                return { ...it, unitPrice: Math.round(Number(it.prixAchat) * Number(it.coefMarge) * 100) / 100 };
+              }
               if (!it.unitPrice || Number(it.unitPrice) === 0) {
                 return { ...it, unitPrice: tauxHoraire };
               }
@@ -221,6 +224,9 @@ export async function POST(request: NextRequest) {
                     quantity: Number(it.quantity) || 1,
                     unitPrice: Number(it.unitPrice) || 0,
                     total: Math.round((Number(it.quantity) || 1) * (Number(it.unitPrice) || 0) * 100) / 100,
+                    type: it.type || 'prestation',
+                    ...(it.prixAchat != null ? { prixAchat: Number(it.prixAchat) } : {}),
+                    ...(it.coefMarge != null ? { coefMarge: Number(it.coefMarge) } : {}),
                   })),
                 },
               },

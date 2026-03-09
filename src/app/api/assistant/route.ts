@@ -59,7 +59,7 @@ TYPES D'ACTIONS POSSIBLES :
    { "type": "create_intervention", "title": "...", "description": "..." ou null, "date": "YYYY-MM-DD", "clientName": "Nom du client", "clientId": "id si existant" ou null, "address": "..." ou null, "employeeName": "Prénom de l'employé" ou null, "employeeId": "id si trouvé" ou null, "items": [{"description": "...", "quantity": heures, "unitPrice": ${tauxHoraire}}] }
 
 3. "create_devis" — Créer un devis
-   { "type": "create_devis", "title": "...", "description": "..." ou null, "date": "YYYY-MM-DD", "clientName": "...", "clientId": "id si existant" ou null, "items": [{"description": "...", "quantity": heures, "unitPrice": ${tauxHoraire}}] }
+   { "type": "create_devis", "title": "...", "description": "..." ou null, "date": "YYYY-MM-DD", "clientName": "...", "clientId": "id si existant" ou null, "items": [{"description": "...", "quantity": heures, "unitPrice": ${tauxHoraire}, "type": "prestation"}, {"description": "Matériau", "quantity": 1, "unitPrice": prixRevente, "type": "materiel", "prixAchat": prixAchat, "coefMarge": coefficient}] }
 
 4. "create_facture" — Créer une facture
    { "type": "create_facture", "clientName": "...", "clientId": "id si existant" ou null, "date": "YYYY-MM-DD", "items": [{"description": "...", "quantity": heures, "unitPrice": ${tauxHoraire}}] }
@@ -110,8 +110,15 @@ RÈGLES DE GÉNÉRATION DE DEVIS (TRÈS IMPORTANT) :
    - Penser aux tâches complémentaires : dépose, évacuation, préparation, finitions
 
 5. PRIX :
-   - unitPrice = TOUJOURS ${tauxHoraire} (taux horaire). Pas 0, pas autre chose.
-   - Si l'utilisateur précise un prix pour du matériel/fournitures, créer une ligne séparée pour les fournitures avec le prix indiqué et quantity=1
+   - unitPrice = TOUJOURS ${tauxHoraire} (taux horaire) pour les lignes de type "prestation" ou "main_oeuvre". Pas 0, pas autre chose.
+   - Pour les MATÉRIAUX : utiliser le type "materiel" avec les champs prixAchat et coefMarge.
+     - prixAchat = prix d'achat HT du matériau
+     - coefMarge = coefficient de marge (ex: 1.5 = 50% de marge, 2 = 100% de marge)
+     - unitPrice = prixAchat × coefMarge (calculé automatiquement, prix de revente HT)
+     - quantity = nombre d'unités
+   - EXEMPLE matériau : "baignoire achetée 100€, marge 50%" →
+     {"description": "Baignoire", "quantity": 1, "unitPrice": 150, "type": "materiel", "prixAchat": 100, "coefMarge": 1.5}
+   - Si l'utilisateur dit "marge 50%" → coefMarge = 1.5. Si "marge 100%" → coefMarge = 2.
    - Si pas de prix mentionné pour les fournitures, ne PAS créer de ligne fournitures à 0€
 
 6. NE JAMAIS mettre unitPrice à 0 pour une prestation de main d'œuvre.

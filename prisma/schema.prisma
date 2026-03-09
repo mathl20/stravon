@@ -56,6 +56,9 @@ model Company {
   conditionsGeneralesDevis String?
   delaiPaiementJours       Int     @default(30)
 
+  // Free trial
+  trialEndsAt                DateTime?
+
   // Stripe subscription
   stripeCustomerId           String?   @unique
   stripeSubscriptionId       String?   @unique
@@ -65,6 +68,11 @@ model Company {
 
   isDemo         Boolean   @default(false)
   demoExpiresAt  DateTime?
+
+  // Affiliate program
+  affiliateCode          String?   @unique
+  affiliateReferredById  String?   // Company ID that referred this company
+  affiliateBalance       Float     @default(0) // Available balance in euros
 
   users          User[]
   clients        Client[]
@@ -80,6 +88,8 @@ model Company {
   articles       ArticleCatalogue[]
   demandesConges DemandeConge[]
   supportTickets SupportTicket[]
+  affiliateEarnings  AffiliateCommission[] @relation("affiliateEarnings")
+  affiliateSource    AffiliateCommission[] @relation("affiliateSource")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -211,6 +221,11 @@ model InterventionItem {
   quantity    Float  @default(1)
   unitPrice   Float  @default(0)
   total       Float  @default(0)
+  type        String @default("prestation") // prestation, main_oeuvre, materiel
+
+  // Margin fields for materials
+  prixAchat   Float?  // Purchase price (hidden from client)
+  coefMarge   Float?  // Margin coefficient (e.g. 1.5 = 50% margin)
 
   interventionId String
   intervention   Intervention @relation(fields: [interventionId], references: [id], onDelete: Cascade)
@@ -417,6 +432,10 @@ model DevisItem {
   unitPrice   Float  @default(0)
   total       Float  @default(0)
   type        String @default("prestation") // prestation, main_oeuvre, materiel
+
+  // Margin fields for materials
+  prixAchat   Float?  // Purchase price (hidden from client)
+  coefMarge   Float?  // Margin coefficient (e.g. 1.5 = 50% margin)
 
   devisId String
   devis   Devis  @relation(fields: [devisId], references: [id], onDelete: Cascade)
@@ -683,4 +702,26 @@ model RefreshToken {
   @@index([userId])
   @@index([expiresAt])
   @@map("refresh_tokens")
+}
+
+model AffiliateCommission {
+  id                String   @id @default(cuid())
+  affiliateCompanyId String  // The company that earns the commission
+  referredCompanyId  String  // The company that was referred
+  stripeInvoiceId    String? @unique // Stripe invoice that triggered this commission
+  amount             Float   // Commission amount in euros
+  commissionRate     Float   @default(0.15) // 15%
+  invoiceAmount      Float   // Original invoice amount
+  status             String  @default("pending") // pending, paid
+  paidAt             DateTime?
+
+  affiliateCompany Company @relation("affiliateEarnings", fields: [affiliateCompanyId], references: [id], onDelete: Cascade)
+  referredCompany  Company @relation("affiliateSource", fields: [referredCompanyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([affiliateCompanyId])
+  @@index([referredCompanyId])
+  @@index([status])
+  @@map("affiliate_commissions")
 }

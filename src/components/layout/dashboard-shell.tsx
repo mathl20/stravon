@@ -10,9 +10,9 @@ import { PermissionsProvider } from '@/lib/permissions-context';
 import { PlanProvider } from '@/lib/plan-context';
 import { getPlanFromPriceId } from '@/lib/plans';
 import { PlanGate } from '@/components/plan-gate';
-import { FlaskConical, ArrowRight, AlertTriangle } from 'lucide-react';
+import { FlaskConical, ArrowRight, AlertTriangle, Clock } from 'lucide-react';
 
-export function DashboardShell({ children, user, company, isDemo = false, subscriptionStatus = 'inactive', isAdminUser = false, stripePriceId = null }: {
+export function DashboardShell({ children, user, company, isDemo = false, subscriptionStatus = 'inactive', isAdminUser = false, stripePriceId = null, trialEndsAt = null }: {
   children: React.ReactNode;
   user: { firstName: string; lastName: string; role: string; permissions: string[] };
   company: { name: string };
@@ -20,6 +20,7 @@ export function DashboardShell({ children, user, company, isDemo = false, subscr
   subscriptionStatus?: string;
   isAdminUser?: boolean;
   stripePriceId?: string | null;
+  trialEndsAt?: string | null;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -44,6 +45,12 @@ export function DashboardShell({ children, user, company, isDemo = false, subscr
     ? { tier: 2, name: 'Business' }
     : getPlanFromPriceId(stripePriceId, subscriptionStatus);
 
+  const trialDaysLeft = trialEndsAt
+    ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : 0;
+  const showTrialBanner = !isDemo && !!trialEndsAt && trialDaysLeft > 0;
+  const hasBanner = isDemo || showTrialBanner;
+
   return (
     <PermissionsProvider value={user.permissions}>
     <PlanProvider value={currentPlan}>
@@ -66,6 +73,24 @@ export function DashboardShell({ children, user, company, isDemo = false, subscr
           </div>
         )}
 
+        {/* Trial banner */}
+        {!isDemo && trialEndsAt && trialDaysLeft > 0 && (
+          <div className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-amber-500 to-orange-500 text-white">
+            <div className="flex items-center justify-center gap-3 px-4 py-2">
+              <Clock className="w-4 h-4 flex-shrink-0" />
+              <p className="text-xs sm:text-sm font-medium">
+                Essai gratuit — il vous reste {trialDaysLeft} jour{trialDaysLeft > 1 ? 's' : ''}
+              </p>
+              <Link
+                href="/subscription"
+                className="flex items-center gap-1 px-3 py-1 text-xs font-semibold bg-white text-amber-700 rounded-full hover:bg-amber-50 transition-colors flex-shrink-0"
+              >
+                Voir les offres <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Mobile overlay */}
         {mobileOpen && (
           <div
@@ -76,7 +101,7 @@ export function DashboardShell({ children, user, company, isDemo = false, subscr
 
         {/* Desktop sidebar */}
         <div className="hidden lg:block">
-          <div className={cn('fixed inset-y-0 left-0 z-40', isDemo && 'top-10')}>
+          <div className={cn('fixed inset-y-0 left-0 z-40', hasBanner && 'top-10')}>
             <Sidebar
               companyName={company.name}
               collapsed={collapsed}
@@ -91,7 +116,7 @@ export function DashboardShell({ children, user, company, isDemo = false, subscr
         <div className={cn(
           'lg:hidden fixed inset-y-0 left-0 z-50 transition-transform duration-300 ease-out',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
-          isDemo && 'top-10'
+          hasBanner && 'top-10'
         )}>
           <Sidebar
             companyName={company.name}
@@ -108,7 +133,7 @@ export function DashboardShell({ children, user, company, isDemo = false, subscr
         <div className={cn(
           'transition-all duration-300',
           collapsed ? 'lg:ml-[68px]' : 'lg:ml-[272px]',
-          isDemo && 'pt-10'
+          hasBanner && 'pt-10'
         )}>
           <Header userName={`${user.firstName} ${user.lastName}`} onMenuToggle={() => setMobileOpen(!mobileOpen)} />
           <main className="p-4 sm:p-5 lg:p-8 max-w-7xl mx-auto">
@@ -122,7 +147,9 @@ export function DashboardShell({ children, user, company, isDemo = false, subscr
                 {user.role === 'PATRON' ? (
                   <>
                     <p className="text-sm text-zinc-500 mb-6 max-w-md">
-                      Pour acceder a STRAVON, vous devez souscrire a un abonnement.
+                      {trialEndsAt && trialDaysLeft <= 0
+                        ? 'Votre essai gratuit est termine. Souscrivez a un abonnement pour continuer a utiliser STRAVON.'
+                        : 'Pour acceder a STRAVON, vous devez souscrire a un abonnement.'}
                     </p>
                     <Link
                       href="/subscription"

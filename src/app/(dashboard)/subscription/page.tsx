@@ -12,6 +12,7 @@ interface SubscriptionInfo {
   currentPeriodEnd: string | null;
   hasSubscription: boolean;
   isDemo: boolean;
+  trialEndsAt?: string | null;
 }
 
 const PLANS = [
@@ -192,9 +193,11 @@ export default function SubscriptionPage() {
                       {subscription?.status === 'trialing' ? 'Essai gratuit' : 'Actif'}
                     </span>
                   </div>
-                  {subscription?.currentPeriodEnd && (
+                  {(subscription?.currentPeriodEnd || subscription?.trialEndsAt) && (
                     <p className="text-xs text-zinc-500 mt-0.5">
-                      {subscription.status === 'trialing' ? 'Fin de l\'essai' : 'Renouvellement'} le {new Date(subscription.currentPeriodEnd).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      {subscription.status === 'trialing'
+                        ? `Fin de l'essai le ${new Date(subscription.trialEndsAt || subscription.currentPeriodEnd!).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                        : `Renouvellement le ${new Date(subscription.currentPeriodEnd!).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`}
                     </p>
                   )}
                 </div>

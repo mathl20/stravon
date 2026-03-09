@@ -46,6 +46,8 @@ export async function POST(request: NextRequest) {
         if (customerEmail) {
           await handleReferralReward(customerEmail);
         }
+        // Track affiliate commissions
+        await handleAffiliateCommission(invoice);
         break;
       }
       case 'invoice.payment_failed': {
@@ -184,5 +186,57 @@ async function handleReferralReward(email: string) {
   console.log(
     `Referral rewarded: referrer=${referral.referrerUserId}(${referrerCanEarn ? '+1' : 'cap reached'}), ` +
     `referred=${referral.referredUserId}(${referredCanEarn ? '+1' : 'cap reached'})`
+  );
+}
+
+// ── Affiliate commission ─────────────────────────────────
+
+const AFFILIATE_RATE = 0.15; // 15%
+
+async function handleAffiliateCommission(invoice: Stripe.Invoice) {
+  const customerId = invoice.customer as string;
+  if (!customerId) return;
+
+  const amountPaid = (invoice.amount_paid || 0) / 100; // Convert from cents to euros
+  if (amountPaid <= 0) return;
+
+  // Find the company that paid this invoice
+  const company = await prisma.company.findFirst({
+    where: { stripeCustomerId: customerId },
+    select: { id: true, affiliateReferredById: true },
+  });
+
+  if (!company || !company.affiliateReferredById) return;
+
+  // Check if commission already exists for this invoice
+  const existingCommission = await prisma.affiliateCommission.findFirst({
+    where: { stripeInvoiceId: invoice.id },
+  });
+  if (existingCommission) return;
+
+  const commissionAmount = Math.round(amountPaid * AFFILIATE_RATE * 100) / 100;
+
+  // Create commission and update affiliate balance
+  await prisma.$transaction([
+    prisma.affiliateCommission.create({
+      data: {
+        affiliateCompanyId: company.affiliateReferredById,
+        referredCompanyId: company.id,
+        stripeInvoiceId: invoice.id,
+        amount: commissionAmount,
+        commissionRate: AFFILIATE_RATE,
+        invoiceAmount: amountPaid,
+        status: 'pending',
+      },
+    }),
+    prisma.company.update({
+      where: { id: company.affiliateReferredById },
+      data: { affiliateBalance: { increment: commissionAmount } },
+    }),
+  ]);
+
+  console.log(
+    `Affiliate commission: ${commissionAmount}€ for company ${company.affiliateReferredById} ` +
+    `from invoice ${invoice.id} (${amountPaid}€)`
   );
 }

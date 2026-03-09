@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const parsed = registerSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
 
-    const { firstName, lastName, email, password, companyName, metier, referralCode: refCode, siret, companyAddress, companyPostalCode, companyCity } = parsed.data;
+    const { firstName, lastName, email, password, companyName, metier, referralCode: refCode, affiliateCode: affCode, siret, companyAddress, companyPostalCode, companyCity } = parsed.data;
     const selectedMetier = metier || 'multi-services';
 
     const exists = await prisma.user.findUnique({ where: { email } });
@@ -37,9 +37,30 @@ export async function POST(request: NextRequest) {
     const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
     const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
+    const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 days
+
+    // Generate unique affiliate code for the new company
+    const generateAffiliateCode = () => `AFF-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+    let newAffiliateCode = generateAffiliateCode();
+    for (let i = 0; i < 5; i++) {
+      const exists2 = await prisma.company.findFirst({ where: { affiliateCode: newAffiliateCode } });
+      if (!exists2) break;
+      newAffiliateCode = generateAffiliateCode();
+    }
+
+    // Resolve affiliate referrer
+    let affiliateReferrerId: string | null = null;
+    if (affCode) {
+      const affiliateCompany = await prisma.company.findFirst({ where: { affiliateCode: affCode } });
+      if (affiliateCompany) affiliateReferrerId = affiliateCompany.id;
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       const company = await tx.company.create({ data: {
         name: companyName, email, metier: selectedMetier,
+        trialEndsAt,
+        affiliateCode: newAffiliateCode,
+        ...(affiliateReferrerId ? { affiliateReferredById: affiliateReferrerId } : {}),
         ...(siret ? { siret } : {}),
         ...(companyAddress ? { address: companyAddress } : {}),
         ...(companyPostalCode ? { postalCode: companyPostalCode } : {}),
@@ -82,11 +103,14 @@ export async function POST(request: NextRequest) {
       return { user, company };
     });
 
-    // Send verification email (non-blocking)
+    // Send verification email
     const emailContent = verifyEmailTemplate(rawToken, firstName);
-    sendEmail({ to: email, subject: emailContent.subject, html: emailContent.html }).catch((err) => {
-      console.error('Failed to send verification email:', err);
-    });
+    try {
+      await sendEmail({ to: email, subject: emailContent.subject, html: emailContent.html });
+    } catch (emailErr) {
+      console.error('[REGISTER] Failed to send verification email to', email, emailErr);
+      // Account is created, but email failed — user can use "resend verification"
+    }
 
     return NextResponse.json({
       message: 'Compte créé. Vérifiez votre email pour activer votre compte.',

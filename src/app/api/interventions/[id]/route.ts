@@ -34,17 +34,25 @@ export async function GET(_: NextRequest, { params }: Ctx) {
     if (!intervention) return NextResponse.json({ error: 'Intervention non trouvée' }, { status: 404 });
 
     // Calculate profitability with real hours from feuilles d'heures
-    const coutMateriaux = ((intervention as any).materiels || []).reduce(
+    const coutMateriauxDirect = ((intervention as any).materiels || []).reduce(
       (s: number, m: any) => s + m.quantite * (m.prixUnitaire || 0), 0
     );
+    // Material margin from items (prixAchat tracked on line items)
+    const materialItems = ((intervention as any).items || []).filter((it: any) => it.type === 'materiel' && it.prixAchat != null);
+    const coutAchatMateriaux = materialItems.reduce((s: number, it: any) => s + (it.prixAchat || 0) * it.quantity, 0);
+    const prixReventeMateriaux = materialItems.reduce((s: number, it: any) => s + it.quantity * it.unitPrice, 0);
+    const margeMateriaux = prixReventeMateriaux - coutAchatMateriaux;
+    const tauxMargeMateriaux = coutAchatMateriaux > 0 ? Math.round((margeMateriaux / coutAchatMateriaux) * 100) : 0;
+
+    const coutMateriaux = coutMateriauxDirect + coutAchatMateriaux;
     const tauxHoraire = (intervention as any).company?.tauxHoraire || 45;
     const totalHeures = ((intervention as any).feuillesHeures || []).reduce(
       (s: number, fh: any) => s + (fh.heuresTravaillees || 0), 0
     );
     const coutMO = (intervention as any).coutMainOeuvre ?? (totalHeures > 0 ? totalHeures * tauxHoraire : ((intervention as any).heuresEstimees ? (intervention as any).heuresEstimees * tauxHoraire : 0));
-    const marge = intervention.amountHT - coutMateriaux - coutMO;
+    const marge = intervention.amountHT - coutMateriauxDirect - coutAchatMateriaux - coutMO;
     const tauxMarge = intervention.amountHT > 0 ? Math.round((marge / intervention.amountHT) * 100) : 0;
-    const rentabilite = { coutMateriaux, coutMO, marge, tauxMarge, tauxHoraire, totalHeures };
+    const rentabilite = { coutMateriaux, coutMO, marge, tauxMarge, tauxHoraire, totalHeures, coutAchatMateriaux, prixReventeMateriaux, margeMateriaux, tauxMargeMateriaux };
 
     return NextResponse.json({ data: { ...intervention, rentabilite } });
   } catch (error) {
@@ -97,7 +105,7 @@ export async function PUT(request: NextRequest, { params }: Ctx) {
         ...(heuresEstimees !== undefined && { heuresEstimees }),
         ...(coutMainOeuvre !== undefined && { coutMainOeuvre }),
         ...(address !== undefined && { address }),
-        items: { create: items.map((it) => ({ description: it.description, quantity: it.quantity, unitPrice: it.unitPrice, total: Math.round(it.quantity * it.unitPrice * 100) / 100 })) },
+        items: { create: items.map((it) => ({ description: it.description, quantity: it.quantity, unitPrice: it.unitPrice, total: Math.round(it.quantity * it.unitPrice * 100) / 100, type: (it as any).type || 'prestation', ...((it as any).prixAchat != null ? { prixAchat: (it as any).prixAchat } : {}), ...((it as any).coefMarge != null ? { coefMarge: (it as any).coefMarge } : {}) })) },
       },
       include: { items: true, client: true, createdBy: { select: { id: true, firstName: true, lastName: true } } } as any,
     });

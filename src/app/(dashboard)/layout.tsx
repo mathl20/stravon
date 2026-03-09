@@ -20,8 +20,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
     await syncSubscriptionFromStripe(company.id);
   }
 
-  const subscriptionStatus = company.subscriptionStatus || 'inactive';
+  let subscriptionStatus = company.subscriptionStatus || 'inactive';
   const stripePriceId = company.stripePriceId || null;
+
+  // Check free trial: if no active subscription but trial is still valid
+  const trialEndsAt = company.trialEndsAt ? new Date(company.trialEndsAt) : null;
+  const isTrialActive = trialEndsAt && trialEndsAt > new Date() && subscriptionStatus !== 'active';
+  if (isTrialActive) {
+    subscriptionStatus = 'trialing';
+  }
 
   return (
     <DashboardShell
@@ -31,6 +38,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       subscriptionStatus={subscriptionStatus}
       isAdminUser={isAdmin(user.email)}
       stripePriceId={stripePriceId}
+      trialEndsAt={isTrialActive ? trialEndsAt.toISOString() : null}
     >
       {children}
     </DashboardShell>

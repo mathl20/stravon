@@ -98,6 +98,8 @@ export async function POST(request: NextRequest) {
             unitPrice: i.unitPrice,
             total: Math.round(i.quantity * i.unitPrice * 100) / 100,
             type: i.type || 'prestation',
+            ...(i.prixAchat != null ? { prixAchat: i.prixAchat } : {}),
+            ...(i.coefMarge != null ? { coefMarge: i.coefMarge } : {}),
           })),
         },
       },

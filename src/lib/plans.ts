@@ -46,6 +46,7 @@ export const ROUTE_MIN_TIER: Record<string, number> = {
   '/feuilles-heures': 1,
   '/team': 1,
   '/parrainage': 1,
+  '/affiliation': 1,
   '/subscription': 0, // Always accessible so users can upgrade
   // Business features (tier 2)
   '/conges': 2,

@@ -13,6 +13,7 @@ export const registerSchema = z.object({
   companyName: z.string().min(2, 'Nom d\'entreprise requis'),
   metier: z.string().optional(),
   referralCode: z.string().optional(),
+  affiliateCode: z.string().optional(),
   siret: z.string().regex(/^\d{14}$/, 'Le SIRET doit contenir 14 chiffres').optional().or(z.literal('')),
   companyAddress: z.string().optional().or(z.literal('')),
   companyPostalCode: z.string().optional().or(z.literal('')),
@@ -34,6 +35,9 @@ export const interventionItemSchema = z.object({
   description: z.string().min(1, 'Description requise'),
   quantity: z.number().min(0.01, 'Quantité invalide'),
   unitPrice: z.number().min(0, 'Prix invalide'),
+  type: z.enum(['prestation', 'main_oeuvre', 'materiel']).optional(),
+  prixAchat: z.number().min(0).optional().nullable(),
+  coefMarge: z.number().min(1).optional().nullable(),
 });
 
 export const interventionSchema = z.object({
@@ -99,6 +103,8 @@ export const devisItemSchema = z.object({
   quantity: z.number().min(0.01, 'Quantité invalide'),
   unitPrice: z.number().min(0, 'Prix invalide'),
   type: z.enum(['prestation', 'main_oeuvre', 'materiel']).optional(),
+  prixAchat: z.number().min(0).optional().nullable(),
+  coefMarge: z.number().min(1).optional().nullable(),
 });
 
 export const devisSchema = z.object({

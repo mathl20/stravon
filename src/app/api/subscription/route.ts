@@ -23,6 +23,7 @@ export async function GET() {
         stripePriceId: true,
         subscriptionCurrentPeriodEnd: true,
         isDemo: true,
+        trialEndsAt: true,
       },
     });
 
@@ -30,12 +31,16 @@ export async function GET() {
       return NextResponse.json({ error: 'Entreprise introuvable' }, { status: 404 });
     }
 
+    const trialActive = company.trialEndsAt && new Date(company.trialEndsAt) > new Date() && company.subscriptionStatus !== 'active';
+    const effectiveStatus = trialActive ? 'trialing' : company.subscriptionStatus;
+
     return NextResponse.json({
-      status: company.subscriptionStatus,
+      status: effectiveStatus,
       priceId: company.stripePriceId,
       currentPeriodEnd: company.subscriptionCurrentPeriodEnd,
-      hasSubscription: company.subscriptionStatus === 'active' || company.subscriptionStatus === 'trialing',
+      hasSubscription: effectiveStatus === 'active' || effectiveStatus === 'trialing',
       isDemo: company.isDemo,
+      trialEndsAt: company.trialEndsAt,
     });
   } catch (error: any) {
     console.error('Subscription status error:', error);

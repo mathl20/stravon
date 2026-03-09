@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Users, FileText, Settings, LogOut, PanelLeftClose, PanelLeftOpen, Zap, UsersRound, Clock, CalendarDays, FileSignature, Receipt, Sparkles, X, Wrench, Palmtree, Gift, CreditCard, ShieldCheck, LifeBuoy, Lock, UserCircle } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, LogOut, PanelLeftClose, PanelLeftOpen, Zap, UsersRound, Clock, CalendarDays, FileSignature, Receipt, Sparkles, X, Wrench, Palmtree, Gift, CreditCard, ShieldCheck, LifeBuoy, Lock, UserCircle, Link2 } from 'lucide-react';
 import { canEditSettings, canManageTeam, canManageFactures, canViewClients, hasPermission, PERMISSIONS } from '@/lib/permissions';
 import { usePlan } from '@/lib/plan-context';
 import { getRequiredTierForRoute, TIER_PLAN_NAME } from '@/lib/plans';
@@ -30,6 +30,7 @@ const NAV_ITEMS = [
   { href: '/prestations', label: 'Prestations', icon: Wrench, showFor: (p: string[]) => canEditSettings(p) },
   { href: '/assistant', label: 'Assistant IA', icon: Sparkles, showFor: (p: string[]) => hasPermission(p, PERMISSIONS.CLIENTS_MANAGE) || hasPermission(p, PERMISSIONS.INTERVENTIONS_MANAGE) || hasPermission(p, PERMISSIONS.DEVIS_MANAGE) },
   { href: '/parrainage', label: 'Parrainage', icon: Gift, showFor: () => true },
+  { href: '/affiliation', label: 'Affiliation', icon: Link2, showFor: (p: string[]) => canEditSettings(p) },
   { href: '/team', label: 'Équipe', icon: UsersRound, showFor: (p: string[]) => canManageTeam(p) },
   { href: '/support', label: 'Support', icon: LifeBuoy, showFor: () => true },
   { href: '/subscription', label: 'Abonnement', icon: CreditCard, showFor: (p: string[]) => canEditSettings(p) },
