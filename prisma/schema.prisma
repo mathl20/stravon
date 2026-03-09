@@ -73,6 +73,11 @@ model Company {
   affiliateCode          String?   @unique
   affiliateReferredById  String?   // Company ID that referred this company
   affiliateBalance       Float     @default(0) // Available balance in euros
+  iban                   String?   // IBAN for affiliate payouts
+
+  // Stripe Connect (affiliate payouts)
+  stripeConnectAccountId  String?   @unique
+  stripeConnectOnboarded  Boolean   @default(false)
 
   users          User[]
   clients        Client[]
@@ -712,8 +717,9 @@ model AffiliateCommission {
   amount             Float   // Commission amount in euros
   commissionRate     Float   @default(0.15) // 15%
   invoiceAmount      Float   // Original invoice amount
-  status             String  @default("pending") // pending, paid
+  status             String  @default("pending") // pending, transferred, paid
   paidAt             DateTime?
+  stripeTransferId   String?   // Stripe Transfer ID for Connect payouts
 
   affiliateCompany Company @relation("affiliateEarnings", fields: [affiliateCompanyId], references: [id], onDelete: Cascade)
   referredCompany  Company @relation("affiliateSource", fields: [referredCompanyId], references: [id], onDelete: Cascade)

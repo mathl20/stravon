@@ -22,6 +22,8 @@ export async function GET() {
         id: true,
         affiliateCode: true,
         affiliateBalance: true,
+        stripeConnectAccountId: true,
+        stripeConnectOnboarded: true,
       },
     });
 
@@ -39,7 +41,7 @@ export async function GET() {
       const updated = await prisma.company.update({
         where: { id: company.id },
         data: { affiliateCode: code },
-        select: { id: true, affiliateCode: true, affiliateBalance: true },
+        select: { id: true, affiliateCode: true, affiliateBalance: true, stripeConnectAccountId: true, stripeConnectOnboarded: true },
       });
       company = updated;
     }
@@ -83,6 +85,8 @@ export async function GET() {
         monthlyEarnings: Math.round(monthlyEarnings * 100) / 100,
         activeReferrals,
         totalReferrals: referredCompanies.length,
+        connectOnboarded: company.stripeConnectOnboarded,
+        hasConnectAccount: !!company.stripeConnectAccountId,
         referrals: referredCompanies.map(c => ({
           id: c.id,
           name: c.name,

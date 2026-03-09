@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Link2, Users, TrendingUp, Wallet, Copy, Check, ExternalLink } from 'lucide-react';
+import { Link2, Users, TrendingUp, Wallet, Copy, Check, ExternalLink, Banknote, CreditCard, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 import { Button, PageLoader } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { apiFetch, formatCurrency } from '@/lib/utils';
+import { useSearchParams } from 'next/navigation';
 
 interface AffiliateData {
   affiliateCode: string | null;
@@ -13,14 +14,18 @@ interface AffiliateData {
   monthlyEarnings: number;
   activeReferrals: number;
   totalReferrals: number;
+  connectOnboarded: boolean;
+  hasConnectAccount: boolean;
   referrals: { id: string; name: string; status: string; createdAt: string }[];
-  commissions: { id: string; amount: number; invoiceAmount: number; commissionRate: number; status: string; referredCompanyName: string; createdAt: string }[];
+  commissions: { id: string; amount: number; invoiceAmount: number; commissionRate: number; status: string; referredCompanyName: string; createdAt: string; stripeTransferId?: string }[];
 }
 
 export default function AffiliationPage() {
   const [data, setData] = useState<AffiliateData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [connectLoading, setConnectLoading] = useState(false);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     apiFetch<{ data: AffiliateData }>('/api/affiliate')
@@ -28,6 +33,15 @@ export default function AffiliationPage() {
       .catch(() => toast.error('Impossible de charger les données'))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    const connect = searchParams.get('connect');
+    if (connect === 'success') {
+      toast.success('Compte de paiement configuré avec succès !');
+    } else if (connect === 'refresh') {
+      toast('La configuration a expiré. Veuillez relancer.', { icon: '⏳' });
+    }
+  }, [searchParams]);
 
   const affiliateLink = data?.affiliateCode
     ? `${window.location.origin}?ref=${data.affiliateCode}`
@@ -56,7 +70,22 @@ export default function AffiliationPage() {
     } catch { /* cancelled */ }
   };
 
+  const setupConnect = async () => {
+    setConnectLoading(true);
+    try {
+      const res = await apiFetch<{ url: string }>('/api/stripe/connect', { method: 'POST' });
+      window.location.href = res.url;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erreur lors de la configuration');
+      setConnectLoading(false);
+    }
+  };
+
   if (loading) return <PageLoader />;
+
+  // Compute next payout info
+  const pendingCommissions = data?.commissions.filter(c => c.status === 'pending') || [];
+  const pendingTotal = pendingCommissions.reduce((s, c) => s + c.amount, 0);
 
   return (
     <div className="max-w-4xl mx-auto animate-fade-in space-y-8">
@@ -96,9 +125,74 @@ export default function AffiliationPage() {
             <Wallet className="w-4.5 h-4.5 text-amber-600" />
           </div>
           <p className="text-2xl font-bold text-zinc-900">{formatCurrency(data?.balance || 0)}</p>
-          <p className="text-xs text-zinc-400 mt-0.5">Solde disponible</p>
+          <p className="text-xs text-zinc-400 mt-0.5">En attente de virement</p>
         </div>
       </div>
+
+      {/* Stripe Connect account status */}
+      <div className="bg-white border border-zinc-200 rounded-2xl p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <CreditCard className="w-4 h-4 text-brand-600" />
+          <h2 className="text-sm font-semibold text-zinc-900">Compte de paiement</h2>
+        </div>
+
+        {data?.connectOnboarded ? (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-zinc-800">Compte configuré</p>
+              <p className="text-xs text-zinc-400">
+                Vos commissions sont automatiquement virées sur votre compte bancaire dès qu&apos;elles atteignent 5&nbsp;€.
+              </p>
+            </div>
+          </div>
+        ) : data?.hasConnectAccount ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                <AlertCircle className="w-4 h-4 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-zinc-800">Configuration en cours</p>
+                <p className="text-xs text-zinc-400">
+                  Votre compte a été créé mais la configuration n&apos;est pas terminée. Finalisez-la pour recevoir vos virements.
+                </p>
+              </div>
+            </div>
+            <Button variant="brand" onClick={setupConnect} loading={connectLoading}>
+              <CreditCard className="w-4 h-4" /> Finaliser la configuration
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-zinc-500">
+              Configurez votre compte de paiement pour recevoir automatiquement vos commissions par virement bancaire.
+              Stripe gère la conformité et la sécurité de vos données bancaires.
+            </p>
+            <Button variant="brand" onClick={setupConnect} loading={connectLoading}>
+              <CreditCard className="w-4 h-4" /> Configurer mon compte de paiement
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Next payout info */}
+      {data?.connectOnboarded && pendingTotal > 0 && (
+        <div className={`border rounded-2xl p-4 text-sm ${pendingTotal >= 5 ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
+          <div className="flex items-center gap-2 mb-1">
+            <Clock className="w-4 h-4" />
+            <p className="font-semibold">{pendingTotal >= 5 ? 'Prochain virement' : 'Solde en attente'}</p>
+          </div>
+          <p className="text-xs">
+            {pendingTotal >= 5
+              ? `${formatCurrency(pendingTotal)} seront virés automatiquement lors du prochain cycle de paiement.`
+              : `${formatCurrency(pendingTotal)} en attente. Le virement sera effectué dès que le solde atteint 5 €.`
+            }
+          </p>
+        </div>
+      )}
 
       {/* Affiliate link */}
       <div className="bg-white border border-zinc-200 rounded-2xl p-5">
@@ -146,7 +240,29 @@ export default function AffiliationPage() {
           <div className="space-y-1">
             <div className="w-7 h-7 rounded-full bg-brand-600 text-white text-xs font-bold flex items-center justify-center">3</div>
             <p className="font-medium text-zinc-700">Vous gagnez 15%</p>
-            <p className="text-xs text-zinc-500">Commission récurrente chaque mois tant qu&apos;ils restent abonnés.</p>
+            <p className="text-xs text-zinc-500">Commission automatique chaque mois, virée directement sur votre compte.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Comment recevoir vos gains */}
+      <div className="bg-white border border-zinc-200 rounded-2xl p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Banknote className="w-4 h-4 text-emerald-600" />
+          <h2 className="text-sm font-semibold text-zinc-900">Comment recevoir vos gains</h2>
+        </div>
+        <div className="space-y-3 text-sm text-zinc-600">
+          <div className="flex items-start gap-3">
+            <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</div>
+            <p><span className="font-medium text-zinc-800">Configurez votre compte de paiement</span> via le bouton ci-dessus. Stripe gère la conformité et sécurise vos données bancaires.</p>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</div>
+            <p>Les commissions sont <span className="font-medium text-zinc-800">calculées automatiquement</span> à chaque paiement d&apos;abonnement de vos filleuls (15% récurrent).</p>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">3</div>
+            <p>Le virement est <span className="font-medium text-zinc-800">automatique</span> dès que votre solde atteint <span className="font-medium text-zinc-800">5&nbsp;€</span>. Aucune action requise de votre part.</p>
           </div>
         </div>
       </div>
@@ -201,11 +317,11 @@ export default function AffiliationPage() {
         </div>
       )}
 
-      {/* Commissions history */}
+      {/* Commissions / payments history */}
       {data && data.commissions.length > 0 && (
         <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
           <div className="px-5 py-3 border-b border-zinc-100">
-            <h2 className="text-sm font-semibold text-zinc-900">Historique des commissions</h2>
+            <h2 className="text-sm font-semibold text-zinc-900">Historique des paiements</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -231,7 +347,7 @@ export default function AffiliationPage() {
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                         c.status === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
                       }`}>
-                        {c.status === 'paid' ? 'Versé' : 'En attente'}
+                        {c.status === 'paid' ? 'Viré' : 'En attente'}
                       </span>
                     </td>
                   </tr>

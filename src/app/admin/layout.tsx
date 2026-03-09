@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { isAdmin } from '@/lib/admin';
 import Link from 'next/link';
-import { ArrowLeft, Shield, MessageSquare, Users } from 'lucide-react';
+import { ArrowLeft, Shield, MessageSquare, Users, Link2 } from 'lucide-react';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
@@ -44,6 +44,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Link href="/admin" className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/10 transition-all">
               <Users className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Utilisateurs</span>
+            </Link>
+            <Link href="/admin/affiliations" className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/10 transition-all">
+              <Link2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Affiliations</span>
             </Link>
             <Link href="/admin/tickets" className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/10 transition-all">
               <MessageSquare className="w-3.5 h-3.5" />
