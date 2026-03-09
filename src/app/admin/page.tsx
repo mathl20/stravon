@@ -80,6 +80,7 @@ export default function AdminPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [confirmDeleteCompany, setConfirmDeleteCompany] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [expandedCompanies, setExpandedCompanies] = useState<Set<string>>(new Set());
 
@@ -171,6 +172,18 @@ export default function AdminPage() {
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Erreur'); }
       toast.success('Utilisateur supprime');
       setConfirmDelete(null); setOpenMenu(null);
+      fetchUsers();
+    } catch (e: any) { toast.error(e.message || 'Erreur'); }
+    finally { setActionLoading(null); }
+  };
+
+  const deleteCompany = async (companyId: string) => {
+    setActionLoading(companyId);
+    try {
+      const res = await fetch(`/api/admin/companies/${companyId}`, { method: 'DELETE' });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Erreur'); }
+      toast.success('Entreprise et toutes ses donnees supprimees');
+      setConfirmDeleteCompany(null); setOpenMenu(null);
       fetchUsers();
     } catch (e: any) { toast.error(e.message || 'Erreur'); }
     finally { setActionLoading(null); }
@@ -353,12 +366,15 @@ export default function AdminPage() {
                           setOpenMenu={setOpenMenu}
                           confirmDelete={confirmDelete}
                           setConfirmDelete={setConfirmDelete}
+                          confirmDeleteCompany={confirmDeleteCompany}
+                          setConfirmDeleteCompany={setConfirmDeleteCompany}
                           actionLoading={actionLoading}
                           updateSubscription={updateSubscription}
                           updatePlan={updatePlan}
                           toggleEmailVerified={toggleEmailVerified}
                           changeRole={changeRole}
                           deleteUser={deleteUser}
+                          deleteCompany={deleteCompany}
                         />
                       )}
                     </div>
@@ -401,12 +417,15 @@ export default function AdminPage() {
                             setOpenMenu={setOpenMenu}
                             confirmDelete={confirmDelete}
                             setConfirmDelete={setConfirmDelete}
+                            confirmDeleteCompany={confirmDeleteCompany}
+                            setConfirmDeleteCompany={setConfirmDeleteCompany}
                             actionLoading={actionLoading}
                             updateSubscription={updateSubscription}
                             updatePlan={updatePlan}
                             toggleEmailVerified={toggleEmailVerified}
                             changeRole={changeRole}
                             deleteUser={deleteUser}
+                            deleteCompany={deleteCompany}
                             hideSubscription
                           />
                         </div>
@@ -442,22 +461,26 @@ export default function AdminPage() {
 }
 
 /* ───── User Action Menu ───── */
-function UserActionMenu({ user, company, hasStripe, openMenu, setOpenMenu, confirmDelete, setConfirmDelete, actionLoading,
-  updateSubscription, updatePlan, toggleEmailVerified, changeRole, deleteUser, hideSubscription = false,
+function UserActionMenu({ user, company, hasStripe, openMenu, setOpenMenu, confirmDelete, setConfirmDelete,
+  confirmDeleteCompany, setConfirmDeleteCompany, actionLoading,
+  updateSubscription, updatePlan, toggleEmailVerified, changeRole, deleteUser, deleteCompany, hideSubscription = false,
 }: {
   user: UserRow; company: Company; hasStripe: boolean;
   openMenu: string | null; setOpenMenu: (v: string | null) => void;
   confirmDelete: string | null; setConfirmDelete: (v: string | null) => void;
+  confirmDeleteCompany: string | null; setConfirmDeleteCompany: (v: string | null) => void;
   actionLoading: string | null;
   updateSubscription: (companyId: string, status: string) => void;
   updatePlan: (companyId: string, stripePriceId: string | null) => void;
   toggleEmailVerified: (userId: string, current: boolean) => void;
   changeRole: (userId: string, role: string) => void;
   deleteUser: (userId: string) => void;
+  deleteCompany: (companyId: string) => void;
   hideSubscription?: boolean;
 }) {
   const isMenuOpen = openMenu === user.id;
   const isDeleting = confirmDelete === user.id;
+  const isDeletingCompany = confirmDeleteCompany === company.id;
   const isLoading = actionLoading === user.id || actionLoading === company.id;
 
   return (
@@ -550,7 +573,19 @@ function UserActionMenu({ user, company, hasStripe, openMenu, setOpenMenu, confi
 
           {/* Danger */}
           <div className="border-t border-zinc-100 p-1.5">
-            {isDeleting ? (
+            {isDeletingCompany ? (
+              <div className="px-3 py-2 space-y-2">
+                <p className="text-xs text-red-600 font-medium">Supprimer l&apos;entreprise &laquo; {company.name} &raquo; ?</p>
+                <p className="text-[11px] text-zinc-500">
+                  Etes-vous sur de vouloir supprimer cette entreprise et tous ses membres ? Cette action est irreversible.
+                  Toutes les donnees seront supprimees (clients, devis, factures, interventions, feuilles d&apos;heures, etc.).
+                </p>
+                <div className="flex gap-2">
+                  <button onClick={() => deleteCompany(company.id)} className="flex-1 py-1.5 rounded-lg text-xs font-medium bg-red-600 text-white hover:bg-red-700 transition-all">Supprimer</button>
+                  <button onClick={() => setConfirmDeleteCompany(null)} className="flex-1 py-1.5 rounded-lg text-xs font-medium bg-zinc-100 text-zinc-600 hover:bg-zinc-200 transition-all">Annuler</button>
+                </div>
+              </div>
+            ) : isDeleting ? (
               <div className="px-3 py-2 space-y-2">
                 <p className="text-xs text-red-600 font-medium">Supprimer cet utilisateur ?</p>
                 <p className="text-[11px] text-zinc-500">
@@ -562,10 +597,18 @@ function UserActionMenu({ user, company, hasStripe, openMenu, setOpenMenu, confi
                 </div>
               </div>
             ) : (
-              <button onClick={() => setConfirmDelete(user.id)}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-red-600 hover:bg-red-50 transition-all">
-                <Trash2 className="w-3.5 h-3.5" /> Supprimer l&apos;utilisateur
-              </button>
+              <>
+                {!hideSubscription && (
+                  <button onClick={() => { setConfirmDeleteCompany(company.id); setConfirmDelete(null); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-red-600 hover:bg-red-50 transition-all">
+                    <Building2 className="w-3.5 h-3.5" /> Supprimer l&apos;entreprise
+                  </button>
+                )}
+                <button onClick={() => { setConfirmDelete(user.id); setConfirmDeleteCompany(null); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-red-600 hover:bg-red-50 transition-all">
+                  <Trash2 className="w-3.5 h-3.5" /> Supprimer l&apos;utilisateur
+                </button>
+              </>
             )}
           </div>
         </div>
