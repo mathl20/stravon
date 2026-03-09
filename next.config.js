@@ -3,6 +3,14 @@ const nextConfig = {
   images: {
     remotePatterns: [{ protocol: 'https', hostname: '**' }],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/googleeb54faa67b448e6b.html',
+        destination: '/api/google-verification',
+      },
+    ];
+  },
   async headers() {
     return [
       {
