@@ -105,10 +105,14 @@ export default function AdminPage() {
   }, [fetchUsers, search]);
 
   useEffect(() => {
-    const handleClick = () => setOpenMenu(null);
+    const handleClick = () => {
+      // Don't close menu if a confirmation dialog is active
+      if (confirmDelete || confirmDeleteCompany) return;
+      setOpenMenu(null);
+    };
     if (openMenu) document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
-  }, [openMenu]);
+  }, [openMenu, confirmDelete, confirmDeleteCompany]);
 
   const handleRefresh = async () => { setRefreshing(true); await fetchUsers(); setRefreshing(false); };
 
@@ -491,7 +495,7 @@ function UserActionMenu({ user, company, hasStripe, openMenu, setOpenMenu, confi
         </div>
       ) : (
         <button
-          onClick={(e) => { e.stopPropagation(); setOpenMenu(isMenuOpen ? null : user.id); setConfirmDelete(null); }}
+          onClick={(e) => { e.stopPropagation(); setOpenMenu(isMenuOpen ? null : user.id); setConfirmDelete(null); setConfirmDeleteCompany(null); }}
           className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-all"
         >
           <MoreVertical className="w-4 h-4" />
