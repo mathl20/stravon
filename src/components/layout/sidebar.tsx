@@ -78,84 +78,87 @@ export function Sidebar({ companyName, collapsed, onToggle, permissions, onLinkC
         </div>
       )}
 
-      {/* Nav */}
-      <nav className="flex-1 min-h-0 py-2 px-3 space-y-0.5 overflow-y-auto overscroll-contain">
-        {visibleNav.map((item) => {
-          const active = pathname === item.href || pathname.startsWith(item.href + '/');
-          const requiredTier = getRequiredTierForRoute(item.href);
-          const isLocked = currentTier < requiredTier;
-          const requiredPlan = TIER_PLAN_NAME[requiredTier];
-          return (
-            <Link key={item.href} href={item.href} title={isCollapsed ? (isLocked ? `${item.label} (${requiredPlan})` : item.label) : undefined}
-              onClick={onLinkClick}
-              className={cn(
-                'flex items-center gap-3 px-3 rounded-xl text-[13px] font-medium transition-all duration-150',
-                isMobile ? 'py-3.5 min-h-[44px]' : 'py-2.5',
-                active
-                  ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/25'
-                  : isLocked
-                  ? 'text-zinc-600 hover:bg-white/[0.04] hover:text-zinc-500'
-                  : 'text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-200 active:bg-white/[0.1]',
-                isCollapsed && 'justify-center px-0 w-10 h-10 mx-auto'
-              )}>
-              <item.icon className={cn('w-[18px] h-[18px] flex-shrink-0', isLocked && !active && 'opacity-50')} />
-              {!isCollapsed && (
-                <>
-                  <span className={cn(isLocked && !active && 'opacity-50')}>{item.label}</span>
-                  {isLocked && (
-                    <span className="ml-auto flex items-center gap-1 text-[10px] text-zinc-600">
-                      <Lock className="w-3 h-3" />
-                      <span className="hidden xl:inline">{requiredPlan}</span>
-                    </span>
-                  )}
-                </>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
+      {/* Scrollable area: nav + bottom actions */}
+      <div className="flex-1 min-h-0 flex flex-col overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
+        {/* Nav */}
+        <nav className="py-2 px-3 space-y-0.5">
+          {visibleNav.map((item) => {
+            const active = pathname === item.href || pathname.startsWith(item.href + '/');
+            const requiredTier = getRequiredTierForRoute(item.href);
+            const isLocked = currentTier < requiredTier;
+            const requiredPlan = TIER_PLAN_NAME[requiredTier];
+            return (
+              <Link key={item.href} href={item.href} title={isCollapsed ? (isLocked ? `${item.label} (${requiredPlan})` : item.label) : undefined}
+                onClick={onLinkClick}
+                className={cn(
+                  'flex items-center gap-3 px-3 rounded-xl text-[13px] font-medium transition-all duration-150',
+                  isMobile ? 'py-3.5 min-h-[44px]' : 'py-2.5',
+                  active
+                    ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/25'
+                    : isLocked
+                    ? 'text-zinc-600 hover:bg-white/[0.04] hover:text-zinc-500'
+                    : 'text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-200 active:bg-white/[0.1]',
+                  isCollapsed && 'justify-center px-0 w-10 h-10 mx-auto'
+                )}>
+                <item.icon className={cn('w-[18px] h-[18px] flex-shrink-0', isLocked && !active && 'opacity-50')} />
+                {!isCollapsed && (
+                  <>
+                    <span className={cn(isLocked && !active && 'opacity-50')}>{item.label}</span>
+                    {isLocked && (
+                      <span className="ml-auto flex items-center gap-1 text-[10px] text-zinc-600">
+                        <Lock className="w-3 h-3" />
+                        <span className="hidden xl:inline">{requiredPlan}</span>
+                      </span>
+                    )}
+                  </>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
 
-      {/* Bottom */}
-      <div className="px-3 pb-3 pt-2 space-y-0.5 border-t border-white/[0.06]">
-        <Link href="/profil" title={isCollapsed ? 'Mon profil' : undefined}
-          onClick={onLinkClick}
-          className={cn(
-            'flex items-center gap-3 px-3 rounded-xl text-[13px] font-medium transition-all duration-150',
-            isMobile ? 'py-3.5 min-h-[44px]' : 'py-2.5',
-            pathname === '/profil'
-              ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/25'
-              : 'text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-200 active:bg-white/[0.1]',
-            isCollapsed && 'justify-center px-0 w-10 h-10 mx-auto'
-          )}>
-          <UserCircle className="w-[18px] h-[18px]" />
-          {!isCollapsed && <span>Mon profil</span>}
-        </Link>
-        {isAdminUser && (
-          <Link href="/admin" title={isCollapsed ? 'Admin' : undefined}
+        {/* Bottom - inside scroll area so always reachable */}
+        <div className="mt-auto px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2 space-y-0.5 border-t border-white/[0.06]">
+          <Link href="/profil" title={isCollapsed ? 'Mon profil' : undefined}
             onClick={onLinkClick}
             className={cn(
-              'flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium text-amber-400 hover:bg-amber-500/10 hover:text-amber-300 transition-all w-full',
+              'flex items-center gap-3 px-3 rounded-xl text-[13px] font-medium transition-all duration-150',
+              isMobile ? 'py-3.5 min-h-[44px]' : 'py-2.5',
+              pathname === '/profil'
+                ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/25'
+                : 'text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-200 active:bg-white/[0.1]',
               isCollapsed && 'justify-center px-0 w-10 h-10 mx-auto'
             )}>
-            <ShieldCheck className="w-[18px] h-[18px]" />
-            {!isCollapsed && <span>Admin</span>}
+            <UserCircle className="w-[18px] h-[18px]" />
+            {!isCollapsed && <span>Mon profil</span>}
           </Link>
-        )}
-        {!isMobile && (
-          <button onClick={onToggle}
-            className={cn('flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium text-zinc-500 hover:bg-white/[0.06] hover:text-zinc-300 transition-all w-full', isCollapsed && 'justify-center px-0 w-10 h-10 mx-auto')}>
-            {isCollapsed ? <PanelLeftOpen className="w-[18px] h-[18px]" /> : <><PanelLeftClose className="w-[18px] h-[18px]" /><span>Réduire</span></>}
+          {isAdminUser && (
+            <Link href="/admin" title={isCollapsed ? 'Admin' : undefined}
+              onClick={onLinkClick}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium text-amber-400 hover:bg-amber-500/10 hover:text-amber-300 transition-all w-full',
+                isCollapsed && 'justify-center px-0 w-10 h-10 mx-auto'
+              )}>
+              <ShieldCheck className="w-[18px] h-[18px]" />
+              {!isCollapsed && <span>Admin</span>}
+            </Link>
+          )}
+          {!isMobile && (
+            <button onClick={onToggle}
+              className={cn('flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium text-zinc-500 hover:bg-white/[0.06] hover:text-zinc-300 transition-all w-full', isCollapsed && 'justify-center px-0 w-10 h-10 mx-auto')}>
+              {isCollapsed ? <PanelLeftOpen className="w-[18px] h-[18px]" /> : <><PanelLeftClose className="w-[18px] h-[18px]" /><span>Réduire</span></>}
+            </button>
+          )}
+          <button onClick={handleLogout}
+            className={cn(
+              'flex items-center gap-3 px-3 rounded-xl text-[13px] font-medium text-zinc-500 hover:bg-red-500/10 hover:text-red-400 transition-all w-full',
+              isMobile ? 'py-3.5 min-h-[44px]' : 'py-2',
+              isCollapsed && 'justify-center px-0 w-10 h-10 mx-auto'
+            )}>
+            <LogOut className="w-[18px] h-[18px]" />
+            {!isCollapsed && <span>Déconnexion</span>}
           </button>
-        )}
-        <button onClick={handleLogout}
-          className={cn(
-            'flex items-center gap-3 px-3 rounded-xl text-[13px] font-medium text-zinc-500 hover:bg-red-500/10 hover:text-red-400 transition-all w-full',
-            isMobile ? 'py-3.5 min-h-[44px]' : 'py-2',
-            isCollapsed && 'justify-center px-0 w-10 h-10 mx-auto'
-          )}>
-          <LogOut className="w-[18px] h-[18px]" />
-          {!isCollapsed && <span>Déconnexion</span>}
-        </button>
+        </div>
       </div>
     </aside>
   );
