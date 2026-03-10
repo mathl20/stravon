@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyToken, getTokenFromRequest, COOKIE_NAME, REFRESH_COOKIE_NAME } from '@/lib/auth-edge';
+import { verifyAmbassadorToken, getAmbassadorTokenFromRequest, AMBASSADOR_COOKIE } from '@/lib/ambassador-auth-edge';
 import { isAdminEmail } from '@/lib/admin-edge';
 
 const PUBLIC_PATHS = ['/', '/login', '/register', '/demo', '/verify-email', '/forgot-password', '/reset-password', '/mentions-legales', '/cgv'];
 const PUBLIC_PREFIXES = ['/sign/', '/api/demo/'];
 const AUTH_PATHS = ['/login', '/register'];
+// Ambassador public pages (landing, login)
+const AMBASSADOR_PUBLIC_PATHS = ['/ambassadeur', '/ambassadeur/login'];
+// Ambassador protected dashboard prefix
+const AMBASSADOR_DASHBOARD_PREFIX = '/ambassadeur/dashboard';
 
 /**
  * Attempt to refresh the access token using the refresh cookie.
@@ -59,6 +64,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Affiliate link: /?ref=AFF-XXXX → /register?aff=AFF-XXXX
+  // Ambassador link: /?ref=AMB-XXXX → /register?amb=AMB-XXXX
   if (pathname === '/') {
     const refParam = request.nextUrl.searchParams.get('ref');
     if (refParam && refParam.startsWith('AFF-')) {
@@ -66,6 +72,44 @@ export async function middleware(request: NextRequest) {
       registerUrl.searchParams.set('aff', refParam);
       return NextResponse.redirect(registerUrl);
     }
+    if (refParam && refParam.startsWith('AMB-')) {
+      const registerUrl = new URL('/register', request.url);
+      registerUrl.searchParams.set('amb', refParam);
+      return NextResponse.redirect(registerUrl);
+    }
+  }
+
+  // ── Ambassador routes (separate auth system) ──
+  if (pathname.startsWith('/ambassadeur')) {
+    // Public ambassador pages
+    if (AMBASSADOR_PUBLIC_PATHS.includes(pathname)) {
+      // If already authenticated as ambassador, redirect to dashboard
+      const ambToken = getAmbassadorTokenFromRequest(request);
+      if (ambToken) {
+        const ambPayload = await verifyAmbassadorToken(ambToken);
+        if (ambPayload && (pathname === '/ambassadeur/login' || pathname === '/ambassadeur')) {
+          return NextResponse.redirect(new URL('/ambassadeur/dashboard', request.url));
+        }
+      }
+      return NextResponse.next();
+    }
+
+    // Protected ambassador dashboard
+    if (pathname.startsWith(AMBASSADOR_DASHBOARD_PREFIX)) {
+      const ambToken = getAmbassadorTokenFromRequest(request);
+      if (!ambToken) {
+        return NextResponse.redirect(new URL('/ambassadeur/login', request.url));
+      }
+      const ambPayload = await verifyAmbassadorToken(ambToken);
+      if (!ambPayload) {
+        const response = NextResponse.redirect(new URL('/ambassadeur/login', request.url));
+        response.cookies.delete(AMBASSADOR_COOKIE);
+        return response;
+      }
+      return NextResponse.next();
+    }
+
+    return NextResponse.next();
   }
 
   const token = getTokenFromRequest(request);

@@ -57,6 +57,7 @@ function RegisterForm() {
   const searchParams = useSearchParams();
   const refCode = searchParams.get('ref') || '';
   const affCode = searchParams.get('aff') || '';
+  const ambCode = searchParams.get('amb') || '';
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [referrerName, setReferrerName] = useState('');
@@ -152,6 +153,7 @@ function RegisterForm() {
           siret: cleanSiret || undefined,
           ...(refCode ? { referralCode: refCode } : {}),
           ...(affCode ? { affiliateCode: affCode } : {}),
+          ...(ambCode ? { ambassadorCode: ambCode } : {}),
         }),
       });
       toast.success('Compte créé !');

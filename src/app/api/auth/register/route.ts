@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const parsed = registerSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
 
-    const { firstName, lastName, email, password, companyName, metier, referralCode: refCode, affiliateCode: affCode, siret, companyAddress, companyPostalCode, companyCity } = parsed.data;
+    const { firstName, lastName, email, password, companyName, metier, referralCode: refCode, affiliateCode: affCode, ambassadorCode: ambCode, siret, companyAddress, companyPostalCode, companyCity } = parsed.data;
     const selectedMetier = metier || 'multi-services';
 
     const exists = await prisma.user.findUnique({ where: { email } });
@@ -54,11 +54,19 @@ export async function POST(request: NextRequest) {
       if (affiliateCompany) affiliateReferrerId = affiliateCompany.id;
     }
 
+    // Resolve ambassador referrer
+    let ambassadorReferrerId: string | null = null;
+    if (ambCode) {
+      const ambassador = await prisma.ambassador.findFirst({ where: { affiliateCode: ambCode } });
+      if (ambassador) ambassadorReferrerId = ambassador.id;
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       const company = await tx.company.create({ data: {
         name: companyName, email, metier: selectedMetier,
         affiliateCode: newAffiliateCode,
         ...(affiliateReferrerId ? { affiliateReferredById: affiliateReferrerId } : {}),
+        ...(ambassadorReferrerId ? { ambassadorReferredById: ambassadorReferrerId } : {}),
         ...(siret ? { siret } : {}),
         ...(companyAddress ? { address: companyAddress } : {}),
         ...(companyPostalCode ? { postalCode: companyPostalCode } : {}),

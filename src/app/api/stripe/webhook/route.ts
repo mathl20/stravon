@@ -48,6 +48,8 @@ export async function POST(request: NextRequest) {
         }
         // Track affiliate commissions
         await handleAffiliateCommission(invoice);
+        // Track ambassador commissions
+        await handleAmbassadorCommission(invoice);
         break;
       }
       case 'invoice.payment_failed': {
@@ -324,27 +326,149 @@ async function attemptConnectTransfer(affiliateCompanyId: string) {
 
 async function handleConnectAccountUpdated(account: Stripe.Account) {
   if (!account.id) return;
+  const payoutsEnabled = account.payouts_enabled ?? false;
 
+  // Check if this is a company's Connect account
   const company = await prisma.company.findFirst({
     where: { stripeConnectAccountId: account.id },
     select: { id: true, stripeConnectOnboarded: true, affiliateBalance: true },
   });
 
-  if (!company) return;
-
-  const payoutsEnabled = account.payouts_enabled ?? false;
-
-  // Update onboarded status
-  if (payoutsEnabled && !company.stripeConnectOnboarded) {
+  if (company && payoutsEnabled && !company.stripeConnectOnboarded) {
     await prisma.company.update({
       where: { id: company.id },
       data: { stripeConnectOnboarded: true },
     });
     console.log(`Connect account ${account.id} is now active for company ${company.id}`);
-
-    // If there's a pending balance, attempt transfer now
     if (company.affiliateBalance >= MIN_TRANSFER_AMOUNT) {
       await attemptConnectTransfer(company.id);
     }
+    return;
+  }
+
+  // Check if this is an ambassador's Connect account
+  const ambassador = await prisma.ambassador.findFirst({
+    where: { stripeConnectAccountId: account.id },
+    select: { id: true, stripeConnectOnboarded: true, balance: true },
+  });
+
+  if (ambassador && payoutsEnabled && !ambassador.stripeConnectOnboarded) {
+    await prisma.ambassador.update({
+      where: { id: ambassador.id },
+      data: { stripeConnectOnboarded: true },
+    });
+    console.log(`Connect account ${account.id} is now active for ambassador ${ambassador.id}`);
+    if (ambassador.balance >= MIN_TRANSFER_AMOUNT) {
+      await attemptAmbassadorTransfer(ambassador.id);
+    }
+  }
+}
+
+// ── Ambassador commission + auto-transfer ──────────────────
+
+async function handleAmbassadorCommission(invoice: Stripe.Invoice) {
+  const customerId = invoice.customer as string;
+  if (!customerId) return;
+
+  const amountPaid = (invoice.amount_paid || 0) / 100;
+  if (amountPaid <= 0) return;
+
+  const company = await prisma.company.findFirst({
+    where: { stripeCustomerId: customerId },
+    select: { id: true, ambassadorReferredById: true, subscriptionStatus: true },
+  });
+
+  if (!company || !company.ambassadorReferredById) return;
+  if (company.subscriptionStatus !== 'active') return;
+
+  // Check if ambassador commission already exists for this invoice
+  const existing = await prisma.ambassadorCommission.findFirst({
+    where: { stripeInvoiceId: invoice.id },
+  });
+  if (existing) return;
+
+  // Get ambassador to determine commission rate
+  const ambassador = await prisma.ambassador.findUnique({
+    where: { id: company.ambassadorReferredById },
+    select: { id: true, customCommissionRate: true, customTier: true },
+  });
+  if (!ambassador) return;
+
+  // Count active referrals for tier calculation
+  const activeReferrals = await prisma.company.count({
+    where: { ambassadorReferredById: ambassador.id, subscriptionStatus: 'active' },
+  });
+
+  // Dynamic import to avoid circular deps
+  const { getCommissionRate } = await import('@/lib/ambassador-auth');
+  const rate = getCommissionRate(ambassador, activeReferrals);
+  const commissionAmount = Math.round(amountPaid * rate * 100) / 100;
+
+  await prisma.$transaction([
+    prisma.ambassadorCommission.create({
+      data: {
+        ambassadorId: ambassador.id,
+        referredCompanyId: company.id,
+        stripeInvoiceId: invoice.id,
+        amount: commissionAmount,
+        commissionRate: rate,
+        invoiceAmount: amountPaid,
+        status: 'pending',
+      },
+    }),
+    prisma.ambassador.update({
+      where: { id: ambassador.id },
+      data: { balance: { increment: commissionAmount } },
+    }),
+  ]);
+
+  console.log(
+    `Ambassador commission: ${commissionAmount}€ (${(rate * 100).toFixed(0)}%) for ambassador ${ambassador.id} ` +
+    `from invoice ${invoice.id} (${amountPaid}€)`
+  );
+
+  await attemptAmbassadorTransfer(ambassador.id);
+}
+
+async function attemptAmbassadorTransfer(ambassadorId: string) {
+  try {
+    const ambassador = await prisma.ambassador.findUnique({
+      where: { id: ambassadorId },
+      select: {
+        id: true,
+        balance: true,
+        stripeConnectAccountId: true,
+        stripeConnectOnboarded: true,
+      },
+    });
+
+    if (!ambassador || !ambassador.stripeConnectAccountId || !ambassador.stripeConnectOnboarded) return;
+    if (ambassador.balance < MIN_TRANSFER_AMOUNT) return;
+
+    const stripe = getStripe();
+    const transferAmountCents = Math.round(ambassador.balance * 100);
+
+    const transfer = await stripe.transfers.create({
+      amount: transferAmountCents,
+      currency: 'eur',
+      destination: ambassador.stripeConnectAccountId,
+      description: 'Commission ambassadeur Stravon',
+      metadata: { ambassadorId },
+    });
+
+    await prisma.$transaction([
+      prisma.ambassadorCommission.updateMany({
+        where: { ambassadorId, status: 'pending' },
+        data: { status: 'paid', paidAt: new Date(), stripeTransferId: transfer.id },
+      }),
+      prisma.ambassador.update({
+        where: { id: ambassadorId },
+        data: { balance: 0 },
+      }),
+    ]);
+
+    console.log(`Ambassador transfer: ${ambassador.balance}€ to ${ambassador.stripeConnectAccountId} (${transfer.id})`);
+  } catch (error) {
+    console.error(`Failed to transfer to ambassador ${ambassadorId}:`, error);
   }
 }

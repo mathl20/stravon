@@ -96,6 +96,11 @@ model Company {
   affiliateEarnings  AffiliateCommission[] @relation("affiliateEarnings")
   affiliateSource    AffiliateCommission[] @relation("affiliateSource")
 
+  // Ambassador program
+  ambassadorReferredById String?
+  ambassadorReferredBy   Ambassador? @relation("ambassadorReferrals", fields: [ambassadorReferredById], references: [id])
+  ambassadorCommissions  AmbassadorCommission[] @relation("ambassadorCommissionSource")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -730,4 +735,58 @@ model AffiliateCommission {
   @@index([referredCompanyId])
   @@index([status])
   @@map("affiliate_commissions")
+}
+
+// ── Ambassador Program ──────────────────────────────────
+
+model Ambassador {
+  id            String  @id @default(cuid())
+  firstName     String
+  lastName      String
+  email         String  @unique
+  phone         String?
+  passwordHash  String
+  affiliateCode String  @unique
+
+  // Stripe Connect
+  stripeConnectAccountId  String?  @unique
+  stripeConnectOnboarded  Boolean  @default(false)
+
+  // Earnings
+  balance       Float   @default(0) // Available balance in euros
+
+  // Tier override (null = auto-calculated from active referrals)
+  customTier              String?  // bronze, argent, or, diamant
+  customCommissionRate    Float?   // Override commission rate (e.g. 0.25)
+
+  commissions    AmbassadorCommission[]
+  referredCompanies Company[] @relation("ambassadorReferrals")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("ambassadors")
+}
+
+model AmbassadorCommission {
+  id              String   @id @default(cuid())
+  ambassadorId    String
+  referredCompanyId String
+  stripeInvoiceId String?  @unique
+  amount          Float
+  commissionRate  Float
+  invoiceAmount   Float
+  status          String   @default("pending") // pending, paid
+  paidAt          DateTime?
+  stripeTransferId String?
+
+  ambassador      Ambassador @relation(fields: [ambassadorId], references: [id], onDelete: Cascade)
+  referredCompany Company    @relation("ambassadorCommissionSource", fields: [referredCompanyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([ambassadorId])
+  @@index([referredCompanyId])
+  @@index([status])
+  @@map("ambassador_commissions")
 }

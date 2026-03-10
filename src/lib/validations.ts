@@ -14,6 +14,7 @@ export const registerSchema = z.object({
   metier: z.string().optional(),
   referralCode: z.string().optional(),
   affiliateCode: z.string().optional(),
+  ambassadorCode: z.string().optional(),
   siret: z.string().regex(/^\d{14}$/, 'Le SIRET doit contenir 14 chiffres').optional().or(z.literal('')),
   companyAddress: z.string().optional().or(z.literal('')),
   companyPostalCode: z.string().optional().or(z.literal('')),
