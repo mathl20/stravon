@@ -16,7 +16,7 @@ export async function sendEmail({ to, subject, html, replyTo }: SendEmailOptions
     throw new Error('Email non configuré. Ajoutez RESEND_API_KEY dans vos variables d\'environnement.');
   }
 
-  const from = process.env.EMAIL_FROM || 'STRAVON <onboarding@resend.dev>';
+  const from = process.env.EMAIL_FROM || 'STRAVON <no-reply@stravon.fr>';
 
   console.log(`[MAILER] Sending email to=${to} subject="${subject}" from="${from}"`);
 
