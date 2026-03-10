@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Trophy, Users, Wallet, ArrowRight, Star, Award, Crown, Gem } from 'lucide-react';
+import { Trophy, Users, Wallet, ArrowRight, ArrowLeft, Star, Award, Crown, Gem } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { apiFetch } from '@/lib/utils';
 import Link from 'next/link';
@@ -38,8 +38,15 @@ export default function AmbassadeurLandingPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950">
+      {/* Back link */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-white transition-colors">
+          <ArrowLeft className="w-4 h-4" />
+          Retour à l&apos;accueil
+        </Link>
+      </div>
       {/* Hero */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12 text-center">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-12 text-center">
         <div className="inline-flex items-center gap-2 bg-brand-500/10 text-brand-400 text-xs font-semibold px-3 py-1 rounded-full mb-6">
           <Trophy className="w-3.5 h-3.5" /> Programme Ambassadeur
         </div>
