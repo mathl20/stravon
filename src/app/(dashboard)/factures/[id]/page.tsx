@@ -179,6 +179,14 @@ export default function FactureDetailPage() {
             </Card>
           )}
 
+          {/* Mention devis */}
+          {(fac as any).mentionDevis && (
+            <div className="flex items-center gap-2 px-4 py-3 bg-blue-50 border border-blue-100 rounded-xl text-sm text-blue-700">
+              <Receipt className="w-4 h-4 flex-shrink-0" />
+              {(fac as any).mentionDevis}
+            </div>
+          )}
+
           {/* Conditions de paiement */}
           {fac.conditionsPaiement && (
             <Card>
@@ -250,11 +258,13 @@ export default function FactureDetailPage() {
           {/* Linked devis */}
           {fac.devis && (
             <Card>
-              <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-3">Devis lie</h3>
+              <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-3">Devis d&apos;origine</h3>
               <Link href={`/devis/${fac.devis.id}`} className="block group">
                 <p className="text-sm font-semibold text-zinc-900 group-hover:text-brand-600 transition-colors">
-                  {(fac.devis as any).numero || (fac.devis as any).reference || 'Devis'}
+                  {(fac.devis as any).reference || 'Devis'}
                 </p>
+                {(fac.devis as any).title && <p className="text-xs text-zinc-500 mt-0.5">{(fac.devis as any).title}</p>}
+                {(fac.devis as any).date && <p className="text-xs text-zinc-400 mt-0.5">Du {formatDate((fac.devis as any).date)}</p>}
               </Link>
             </Card>
           )}

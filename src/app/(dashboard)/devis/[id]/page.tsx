@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Pencil, FileDown, Send, CheckCircle, XCircle, ArrowRightLeft, Bell, Clock, Mail } from 'lucide-react';
+import { ArrowLeft, Pencil, FileDown, Send, CheckCircle, XCircle, ArrowRightLeft, Bell, Clock, Mail, Receipt, ExternalLink } from 'lucide-react';
 import { Button, Card, PageLoader } from '@/components/ui';
 import { apiFetch, formatCurrency, formatDate, getDevisStatusLabel, getDevisStatusColor } from '@/lib/utils';
-import { canConvertDevis, canManageAllDevis } from '@/lib/permissions';
+import { canConvertDevis, canManageAllDevis, canManageFactures } from '@/lib/permissions';
 import { usePermissions } from '@/lib/permissions-context';
 import toast from 'react-hot-toast';
 import type { DevisFull } from '@/types';
@@ -18,6 +18,7 @@ export default function DevisDetailPage() {
   const [devis, setDevis] = useState<DevisFull | null>(null);
   const [loading, setLoading] = useState(true);
   const [converting, setConverting] = useState(false);
+  const [generatingFacture, setGeneratingFacture] = useState(false);
   const [relancing, setRelancing] = useState(false);
   const [sending, setSending] = useState(false);
 
@@ -42,13 +43,27 @@ export default function DevisDetailPage() {
     if (!confirm('Convertir ce devis en intervention ? Cette action est irreversible.')) return;
     setConverting(true);
     try {
-      const result = await apiFetch<{ data: { interventionId: string } }>(`/api/devis/${id}/convert`, { method: 'POST' });
+      const result = await apiFetch<{ data: { id: string } }>(`/api/devis/${id}/convert`, { method: 'POST' });
       toast.success('Devis converti en intervention');
-      router.push(`/interventions/${result.data.interventionId}`);
+      router.push(`/interventions/${result.data.id}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erreur');
     } finally {
       setConverting(false);
+    }
+  };
+
+  const handleGenerateFacture = async () => {
+    if (!confirm(`Transformer ce devis en facture pour ${devis?.client.firstName} ${devis?.client.lastName} ?\nMontant : ${formatCurrency(devis?.amountTTC || 0)} TTC`)) return;
+    setGeneratingFacture(true);
+    try {
+      const result = await apiFetch<{ data: { id: string; numero: string } }>(`/api/devis/${id}/generate-facture`, { method: 'POST' });
+      toast.success(`Facture ${result.data.numero} creee avec succes`);
+      router.push(`/factures/${result.data.id}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erreur');
+    } finally {
+      setGeneratingFacture(false);
     }
   };
 
@@ -89,9 +104,19 @@ export default function DevisDetailPage() {
               </Button>
             </>
           )}
+          {devis.status === 'ACCEPTE' && canManageFactures(perms) && (
+            <Button variant="brand" onClick={handleGenerateFacture} loading={generatingFacture}>
+              <Receipt className="w-4 h-4" /> Transformer en facture
+            </Button>
+          )}
           {devis.status === 'ACCEPTE' && canConvertDevis(perms) && (
-            <Button variant="brand" onClick={handleConvert} loading={converting}>
+            <Button variant="secondary" onClick={handleConvert} loading={converting}>
               <ArrowRightLeft className="w-4 h-4" /> Convertir en intervention
+            </Button>
+          )}
+          {devis.status === 'FACTURE' && (devis as any).facture && (
+            <Button variant="brand" href={`/factures/${(devis as any).facture.id}`}>
+              <ExternalLink className="w-4 h-4" /> Voir {(devis as any).facture.numero}
             </Button>
           )}
 

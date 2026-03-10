@@ -420,7 +420,7 @@ model Devis {
 
   items         DevisItem[]
   piecesJointes DevisPieceJointe[]
-  factures      Facture[]
+  facture       Facture?
   interventions Intervention[]
   relances      RelanceDevis[]
 
@@ -491,8 +491,9 @@ model Facture {
 
   interventionId String?
   intervention   Intervention? @relation(fields: [interventionId], references: [id])
-  devisId        String?
+  devisId        String?       @unique
   devis          Devis?        @relation(fields: [devisId], references: [id])
+  mentionDevis   String?
   clientId       String
   client         Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
   companyId      String

@@ -24,6 +24,7 @@ export async function GET(request: NextRequest, ctx: Ctx) {
         createdBy: { select: { id: true, firstName: true, lastName: true } },
         company: true,
         relances: { orderBy: { date: 'asc' } },
+        facture: { select: { id: true, numero: true } },
       } as any,
     });
     if (!devis) return NextResponse.json({ error: 'Devis non trouve' }, { status: 404 });

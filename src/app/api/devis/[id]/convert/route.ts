@@ -56,7 +56,7 @@ export async function POST(request: NextRequest, ctx: Ctx) {
         },
       });
 
-      await tx.devis.update({ where: { id }, data: { status: 'FACTURE' } });
+      // Devis stays ACCEPTE — status changes to FACTURE only when a facture is generated
       return intervention;
     });
 

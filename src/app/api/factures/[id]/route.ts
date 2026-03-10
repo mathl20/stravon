@@ -25,7 +25,7 @@ export async function GET(request: NextRequest, ctx: Ctx) {
         company: true,
         createdBy: { select: { id: true, firstName: true, lastName: true } },
         intervention: { select: { id: true, reference: true, title: true } },
-        devis: { select: { id: true, reference: true, title: true } },
+        devis: { select: { id: true, reference: true, title: true, date: true } },
       },
     });
     if (!facture) return NextResponse.json({ error: 'Facture non trouvee' }, { status: 404 });

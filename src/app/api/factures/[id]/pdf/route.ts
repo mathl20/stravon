@@ -18,7 +18,7 @@ export async function GET(_: NextRequest, { params }: Ctx) {
 
     const facture: any = await prisma.facture.findFirst({
       where: { id, companyId: user.companyId },
-      include: { items: true, client: true, company: true, intervention: { select: { reference: true, title: true } } } as any,
+      include: { items: true, client: true, company: true, intervention: { select: { reference: true, title: true } }, devis: { select: { reference: true, date: true } } } as any,
     });
     if (!facture) return NextResponse.json({ error: 'Non trouvee' }, { status: 404 });
 
@@ -97,6 +97,7 @@ ${facture.dateEcheance ? '<div class="meta">Echeance: ' + formatDate(facture.dat
 ${facture.client.phone ? '<br>Tel: ' + facture.client.phone : ''}${facture.client.email ? ' &middot; ' + facture.client.email : ''}</div>
 </div></div>
 ${facture.intervention ? '<div class="section"><div class="section-title">Intervention associee</div><div class="meta">Ref: ' + facture.intervention.reference + ' &mdash; ' + facture.intervention.title + '</div></div>' : ''}
+${facture.devis ? '<div class="section"><div class="section-title">Devis d\'origine</div><div class="meta">Facture relative au devis n&deg; ' + facture.devis.reference + ' du ' + formatDate(facture.devis.date) + '</div></div>' : ''}
 <div class="section"><div class="section-title">Details</div><table><thead><tr><th>Description</th><th>Qte</th><th>Prix unit.</th><th>Total</th></tr></thead><tbody>
 ${facture.items.map((it: any) => `<tr><td>${it.description}</td><td>${it.quantity}</td><td>${formatCurrency(it.unitPrice)}</td><td>${formatCurrency(it.total)}</td></tr>`).join('')}
 </tbody></table>
