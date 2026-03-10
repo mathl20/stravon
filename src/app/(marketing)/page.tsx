@@ -364,6 +364,9 @@ export default function LandingPage() {
               <div className="amb-extra-label"><strong>100% gratuit</strong>Aucun frais, aucun engagement</div>
             </div>
           </div>
+          <div style={{ textAlign: 'center', marginTop: '40px' }} className="reveal">
+            <a href="/ambassadeur" className="btn-primary" style={{ fontSize: '1.05rem', padding: '16px 40px' }}>Devenir ambassadeur gratuitement →</a>
+          </div>
         </div>
       </section>
 

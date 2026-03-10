@@ -5,7 +5,7 @@ import { verifyAmbassadorToken, getAmbassadorTokenFromRequest, AMBASSADOR_COOKIE
 import { isAdminEmail } from '@/lib/admin-edge';
 
 const PUBLIC_PATHS = ['/', '/login', '/register', '/demo', '/verify-email', '/forgot-password', '/reset-password', '/mentions-legales', '/cgv'];
-const PUBLIC_PREFIXES = ['/sign/', '/api/demo/', '/devis-accept/', '/facture-view/'];
+const PUBLIC_PREFIXES = ['/sign/', '/api/demo/', '/devis-accept/', '/facture-view/', '/r/'];
 const AUTH_PATHS = ['/login', '/register'];
 // Ambassador public pages (landing, login)
 const AMBASSADOR_PUBLIC_PATHS = ['/ambassadeur', '/ambassadeur/login'];
