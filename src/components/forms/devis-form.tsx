@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { Plus, Trash2, Wrench, Sparkles, Paperclip, X, FileText, Image, MapPin, User, Phone, Mail, ChevronDown, ChevronUp, Loader2, Package, Clock, Camera } from 'lucide-react';
+import { Plus, Trash2, Wrench, Sparkles, Paperclip, X, FileText, Image, MapPin, User, Phone, Mail, ChevronDown, ChevronUp, Loader2, Package, Clock, Camera, Search } from 'lucide-react';
 import { Button, Input, Select, Textarea } from '@/components/ui';
 import { apiFetch, formatCurrency, calculateTTC } from '@/lib/utils';
 import { PrestationPicker } from '@/components/forms/prestation-picker';
-import { ArticlePicker } from '@/components/forms/article-picker';
 import type { Client, Devis, DevisItem } from '@/types';
 
 interface DevisFormProps {
@@ -21,6 +20,17 @@ interface LineItem {
   type: 'prestation' | 'main_oeuvre' | 'materiel';
   prixAchat?: number | null;
   coefMarge?: number | null;
+  fournisseur?: string | null;
+  referenceFournisseur?: string | null;
+}
+
+interface MaterialSuggestion {
+  description: string;
+  unitPrice: number;
+  prixAchat: number | null;
+  coefMarge: number | null;
+  fournisseur: string | null;
+  referenceFournisseur: string | null;
 }
 
 const LINE_TYPES = [
@@ -45,7 +55,6 @@ export function DevisForm({ devis }: DevisFormProps) {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showChantierAddress, setShowChantierAddress] = useState(false);
   const [showPrestations, setShowPrestations] = useState(false);
-  const [showArticles, setShowArticles] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
@@ -83,8 +92,13 @@ export function DevisForm({ devis }: DevisFormProps) {
       type: ((it as any).type || 'prestation') as LineItem['type'],
       prixAchat: (it as any).prixAchat ?? null,
       coefMarge: (it as any).coefMarge ?? null,
+      fournisseur: (it as any).fournisseur ?? null,
+      referenceFournisseur: (it as any).referenceFournisseur ?? null,
     })) || [{ description: '', quantity: 1, unitPrice: 0, type: 'prestation' }]
   );
+  const [expandedMargins, setExpandedMargins] = useState<Set<number>>(new Set());
+  const [suggestions, setSuggestions] = useState<{ index: number; items: MaterialSuggestion[] } | null>(null);
+  const suggestionsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     apiFetch<{ data: Client[] }>('/api/clients').then((r) => {
@@ -122,7 +136,49 @@ export function DevisForm({ devis }: DevisFormProps) {
     setSelectedClient(c);
   };
 
-  const addItem = (type: LineItem['type'] = 'prestation') => setItems((prev) => [...prev, { description: '', quantity: 1, unitPrice: 0, type, prixAchat: null, coefMarge: type === 'materiel' ? 1.5 : null }]);
+  const addItem = (type: LineItem['type'] = 'prestation') => {
+    setItems((prev) => [...prev, { description: '', quantity: 1, unitPrice: 0, type, prixAchat: null, coefMarge: type === 'materiel' ? 1.5 : null, fournisseur: null, referenceFournisseur: null }]);
+    if (type === 'materiel') {
+      setExpandedMargins((prev) => new Set([...prev, items.length]));
+    }
+  };
+
+  const toggleMargin = (index: number) => {
+    setExpandedMargins((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
+
+  const fetchSuggestions = useCallback((index: number, query: string) => {
+    if (suggestionsTimeoutRef.current) clearTimeout(suggestionsTimeoutRef.current);
+    if (query.length < 2) { setSuggestions(null); return; }
+    suggestionsTimeoutRef.current = setTimeout(async () => {
+      try {
+        const res = await apiFetch<{ data: MaterialSuggestion[] }>(`/api/materiels/suggestions?q=${encodeURIComponent(query)}`);
+        if (res.data.length > 0) setSuggestions({ index, items: res.data });
+        else setSuggestions(null);
+      } catch { setSuggestions(null); }
+    }, 300);
+  }, []);
+
+  const applySuggestion = (index: number, s: MaterialSuggestion) => {
+    setItems((prev) => prev.map((item, i) => {
+      if (i !== index) return item;
+      return {
+        ...item,
+        description: s.description,
+        unitPrice: s.unitPrice,
+        prixAchat: s.prixAchat,
+        coefMarge: s.coefMarge,
+        fournisseur: s.fournisseur,
+        referenceFournisseur: s.referenceFournisseur,
+      };
+    }));
+    setSuggestions(null);
+  };
 
   const removeItem = (i: number) => {
     if (items.length > 1) setItems((prev) => prev.filter((_, idx) => idx !== i));
@@ -146,6 +202,8 @@ export function DevisForm({ devis }: DevisFormProps) {
       if (field === 'type' && value !== 'materiel') {
         updated.prixAchat = null;
         updated.coefMarge = null;
+        updated.fournisseur = null;
+        updated.referenceFournisseur = null;
       }
       return updated;
     }));
@@ -274,7 +332,16 @@ export function DevisForm({ devis }: DevisFormProps) {
         tvaRate: Number(form.tvaRate),
         dateExpiration: form.dateExpiration || null,
         acomptePercent: form.acomptePercent ? Number(form.acomptePercent) : null,
-        items: items.map((it) => ({ ...it, quantity: Number(it.quantity), unitPrice: Number(it.unitPrice) })),
+        items: items.map((it) => ({
+          description: it.description,
+          quantity: Number(it.quantity),
+          unitPrice: Number(it.unitPrice),
+          type: it.type,
+          prixAchat: it.prixAchat ?? null,
+          coefMarge: it.coefMarge ?? null,
+          fournisseur: it.fournisseur ?? null,
+          referenceFournisseur: it.referenceFournisseur ?? null,
+        })),
       };
 
       let devisId: string;
@@ -421,7 +488,7 @@ export function DevisForm({ devis }: DevisFormProps) {
             <Button type="button" variant="brand" onClick={() => setShowPrestations(true)} className="text-xs !px-3 !py-1.5">
               <Wrench className="w-3.5 h-3.5" /> Prestation
             </Button>
-            <Button type="button" variant="secondary" onClick={() => setShowArticles(true)} className="text-xs !px-3 !py-1.5">
+            <Button type="button" variant="secondary" onClick={() => addItem('materiel')} className="text-xs !px-3 !py-1.5">
               <Package className="w-3.5 h-3.5" /> Matériel
             </Button>
             <Button type="button" variant="secondary" onClick={() => addItem('main_oeuvre')} className="text-xs !px-3 !py-1.5">
@@ -457,14 +524,37 @@ export function DevisForm({ devis }: DevisFormProps) {
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 relative">
                     <label className="text-xs text-zinc-400 mb-1 block sm:hidden">Description</label>
                     <input
-                      placeholder="Description"
+                      placeholder={isMateriel ? 'Nom du matériel...' : 'Description'}
                       value={item.description}
-                      onChange={(e) => updateItem(i, 'description', e.target.value)}
+                      onChange={(e) => {
+                        updateItem(i, 'description', e.target.value);
+                        if (isMateriel) fetchSuggestions(i, e.target.value);
+                      }}
+                      onBlur={() => setTimeout(() => { if (suggestions?.index === i) setSuggestions(null); }, 200)}
                       className="input-field text-sm relative z-10"
                     />
+                    {isMateriel && suggestions?.index === i && suggestions.items.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-zinc-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                        {suggestions.items.map((s, si) => (
+                          <button
+                            key={si}
+                            type="button"
+                            onClick={() => applySuggestion(i, s)}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-50 transition-colors border-b border-zinc-50 last:border-0"
+                          >
+                            <span className="font-medium text-zinc-800">{s.description}</span>
+                            <span className="flex items-center gap-3 text-xs text-zinc-400 mt-0.5">
+                              <span>Vente: {formatCurrency(s.unitPrice)}</span>
+                              {s.prixAchat != null && <span>Achat: {formatCurrency(s.prixAchat)}</span>}
+                              {s.fournisseur && <span>{s.fournisseur}</span>}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="grid grid-cols-3 sm:flex gap-3 sm:gap-3 items-end">
                     <div className="sm:w-20">
@@ -504,39 +594,78 @@ export function DevisForm({ devis }: DevisFormProps) {
                     </div>
                   </div>
                 </div>
-                {/* Material margin fields */}
+                {/* Material margin & supplier section */}
                 {isMateriel && (
-                  <div className="flex flex-wrap items-center gap-3 sm:ml-[72px]">
-                    <div className="flex items-center gap-1.5">
-                      <label className="text-[11px] text-zinc-400 whitespace-nowrap">Achat HT</label>
-                      <input
-                        type="number"
-                        placeholder="Prix achat"
-                        value={item.prixAchat ?? ''}
-                        onChange={(e) => updateItem(i, 'prixAchat', e.target.value ? Number(e.target.value) : null)}
-                        onFocus={(e) => e.target.select()}
-                        className="input-field text-xs text-right w-24"
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <label className="text-[11px] text-zinc-400 whitespace-nowrap">Coef.</label>
-                      <input
-                        type="number"
-                        placeholder="1.5"
-                        value={item.coefMarge ?? ''}
-                        onChange={(e) => updateItem(i, 'coefMarge', e.target.value ? Number(e.target.value) : null)}
-                        onFocus={(e) => e.target.select()}
-                        className="input-field text-xs text-center w-16"
-                        min="1"
-                        step="0.1"
-                      />
-                    </div>
-                    {hasMargin && (
-                      <span className="text-[11px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                        +{marginPercent}% marge
-                      </span>
+                  <div className="sm:ml-[72px]">
+                    <button
+                      type="button"
+                      onClick={() => toggleMargin(i)}
+                      className="flex items-center gap-1.5 text-[11px] font-medium text-zinc-400 hover:text-zinc-600 transition-colors"
+                    >
+                      {expandedMargins.has(i) ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                      Marge & fournisseur
+                      {hasMargin && (
+                        <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${marginPercent >= 0 ? 'text-emerald-600 bg-emerald-50' : 'text-red-600 bg-red-50'}`}>
+                          {marginPercent >= 0 ? '+' : ''}{marginPercent}%
+                        </span>
+                      )}
+                    </button>
+                    {expandedMargins.has(i) && (
+                      <div className="mt-2 p-3 bg-white rounded-lg border border-zinc-100 space-y-2.5">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <div className="flex items-center gap-1.5">
+                            <label className="text-[11px] text-zinc-400 whitespace-nowrap">Achat HT</label>
+                            <input
+                              type="number"
+                              placeholder="Prix achat"
+                              value={item.prixAchat ?? ''}
+                              onChange={(e) => updateItem(i, 'prixAchat', e.target.value ? Number(e.target.value) : null)}
+                              onFocus={(e) => e.target.select()}
+                              className="input-field text-xs text-right w-24"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <label className="text-[11px] text-zinc-400 whitespace-nowrap">Coef.</label>
+                            <input
+                              type="number"
+                              placeholder="1.5"
+                              value={item.coefMarge ?? ''}
+                              onChange={(e) => updateItem(i, 'coefMarge', e.target.value ? Number(e.target.value) : null)}
+                              onFocus={(e) => e.target.select()}
+                              className="input-field text-xs text-center w-16"
+                              min="0.1"
+                              step="0.1"
+                            />
+                          </div>
+                          {hasMargin && (
+                            <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${marginPercent >= 0 ? 'text-emerald-600 bg-emerald-50' : 'text-red-600 bg-red-50'}`}>
+                              {marginPercent >= 0 ? '+' : ''}{marginPercent}% — marge {formatCurrency((item.unitPrice - (item.prixAchat || 0)) * item.quantity)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-3">
+                          <div className="flex items-center gap-1.5 flex-1 min-w-[140px]">
+                            <label className="text-[11px] text-zinc-400 whitespace-nowrap">Fournisseur</label>
+                            <input
+                              placeholder="Nom du fournisseur"
+                              value={item.fournisseur ?? ''}
+                              onChange={(e) => updateItem(i, 'fournisseur', e.target.value || null)}
+                              className="input-field text-xs flex-1"
+                            />
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-1 min-w-[140px]">
+                            <label className="text-[11px] text-zinc-400 whitespace-nowrap">Réf.</label>
+                            <input
+                              placeholder="Référence"
+                              value={item.referenceFournisseur ?? ''}
+                              onChange={(e) => updateItem(i, 'referenceFournisseur', e.target.value || null)}
+                              className="input-field text-xs flex-1"
+                            />
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
                 )}
@@ -589,6 +718,39 @@ export function DevisForm({ devis }: DevisFormProps) {
             )}
           </div>
         </div>
+
+        {/* Margin summary */}
+        {(() => {
+          const matItems = items.filter((it) => it.type === 'materiel' && it.prixAchat != null && it.prixAchat > 0);
+          if (matItems.length === 0) return null;
+          const totalAchat = matItems.reduce((s, it) => s + (it.prixAchat || 0) * it.quantity, 0);
+          const totalVente = matItems.reduce((s, it) => s + it.unitPrice * it.quantity, 0);
+          const totalMarge = totalVente - totalAchat;
+          const margePercent = totalAchat > 0 ? Math.round((totalMarge / totalAchat) * 100) : 0;
+          return (
+            <div className="mt-4 p-3 bg-zinc-50 rounded-xl border border-zinc-100">
+              <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">Synthèse marge matériel (confidentiel)</p>
+              <div className="grid grid-cols-4 gap-3 text-xs">
+                <div>
+                  <p className="text-zinc-400">Total achat</p>
+                  <p className="font-semibold text-zinc-700">{formatCurrency(totalAchat)}</p>
+                </div>
+                <div>
+                  <p className="text-zinc-400">Total vente</p>
+                  <p className="font-semibold text-zinc-700">{formatCurrency(totalVente)}</p>
+                </div>
+                <div>
+                  <p className="text-zinc-400">Marge brute</p>
+                  <p className={`font-semibold ${totalMarge >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{formatCurrency(totalMarge)}</p>
+                </div>
+                <div>
+                  <p className="text-zinc-400">Marge %</p>
+                  <p className={`font-semibold ${margePercent >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{margePercent >= 0 ? '+' : ''}{margePercent}%</p>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Conditions de paiement & délai */}
@@ -696,21 +858,6 @@ export function DevisForm({ devis }: DevisFormProps) {
             });
           }}
           onClose={() => setShowPrestations(false)}
-        />
-      )}
-
-      {/* Article picker modal */}
-      {showArticles && (
-        <ArticlePicker
-          onSelect={(newItems) => {
-            setItems((prev) => {
-              const cleaned = prev.length === 1 && !prev[0].description && prev[0].unitPrice === 0
-                ? []
-                : prev;
-              return [...cleaned, ...newItems.map((it) => ({ ...it, type: it.type as LineItem['type'] }))];
-            });
-          }}
-          onClose={() => setShowArticles(false)}
         />
       )}
 

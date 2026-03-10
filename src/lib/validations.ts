@@ -105,7 +105,9 @@ export const devisItemSchema = z.object({
   unitPrice: z.number().min(0, 'Prix invalide'),
   type: z.enum(['prestation', 'main_oeuvre', 'materiel']).optional(),
   prixAchat: z.number().min(0).optional().nullable(),
-  coefMarge: z.number().min(1).optional().nullable(),
+  coefMarge: z.number().min(0.1).optional().nullable(),
+  fournisseur: z.string().optional().nullable(),
+  referenceFournisseur: z.string().optional().nullable(),
 });
 
 export const devisSchema = z.object({

@@ -97,6 +97,8 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
             type: i.type || 'prestation',
             ...(i.prixAchat != null ? { prixAchat: i.prixAchat } : {}),
             ...(i.coefMarge != null ? { coefMarge: i.coefMarge } : {}),
+            ...(i.fournisseur ? { fournisseur: i.fournisseur } : {}),
+            ...(i.referenceFournisseur ? { referenceFournisseur: i.referenceFournisseur } : {}),
           })),
         },
       },

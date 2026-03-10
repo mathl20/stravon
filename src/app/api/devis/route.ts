@@ -102,6 +102,8 @@ export async function POST(request: NextRequest) {
             type: i.type || 'prestation',
             ...(i.prixAchat != null ? { prixAchat: i.prixAchat } : {}),
             ...(i.coefMarge != null ? { coefMarge: i.coefMarge } : {}),
+            ...(i.fournisseur ? { fournisseur: i.fournisseur } : {}),
+            ...(i.referenceFournisseur ? { referenceFournisseur: i.referenceFournisseur } : {}),
           })),
         },
       },

@@ -443,9 +443,11 @@ model DevisItem {
   total       Float  @default(0)
   type        String @default("prestation") // prestation, main_oeuvre, materiel
 
-  // Margin fields for materials
-  prixAchat   Float?  // Purchase price (hidden from client)
-  coefMarge   Float?  // Margin coefficient (e.g. 1.5 = 50% margin)
+  // Margin fields for materials (hidden from client)
+  prixAchat            Float?   // Purchase price
+  coefMarge            Float?   // Margin coefficient (e.g. 1.5 = 50% margin)
+  fournisseur          String?  // Supplier name
+  referenceFournisseur String?  // Supplier reference
 
   devisId String
   devis   Devis  @relation(fields: [devisId], references: [id], onDelete: Cascade)
@@ -522,6 +524,13 @@ model FactureItem {
   quantity    Float  @default(1)
   unitPrice   Float  @default(0)
   total       Float  @default(0)
+  type        String @default("prestation")
+
+  // Material margin (artisan-only, never shown to client)
+  prixAchat            Float?
+  coefMarge            Float?
+  fournisseur          String?
+  referenceFournisseur String?
 
   factureId String
   facture   Facture @relation(fields: [factureId], references: [id], onDelete: Cascade)
