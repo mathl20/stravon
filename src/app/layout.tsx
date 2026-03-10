@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Providers } from '@/components/providers';
 import './globals.css';
 
@@ -65,6 +66,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
         <Providers>{children}</Providers>
+        <SpeedInsights />
       </body>
     </html>
   );
