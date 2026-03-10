@@ -101,6 +101,9 @@ model Company {
   ambassadorReferredBy   Ambassador? @relation("ambassadorReferrals", fields: [ambassadorReferredById], references: [id])
   ambassadorCommissions  AmbassadorCommission[] @relation("ambassadorCommissionSource")
 
+  // Unified parrainage (commission-based)
+  parrainageFilleul ParrainageReferral? @relation("parrainageFilleul")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -125,6 +128,11 @@ model User {
   referralCode     String?    @unique
   freeMonthsEarned Int        @default(0)
 
+  // Parrainage (commission-based referral)
+  parrainageBalance      Float    @default(0)
+  parrainStripeConnectId String?  @unique
+  parrainStripeOnboarded Boolean  @default(false)
+
   companyId      String
   company        Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
   interventions  Intervention[]
@@ -137,6 +145,7 @@ model User {
   factures       Facture[]
   referralsMade     Referral[] @relation("referralsMade")
   referralsReceived Referral[] @relation("referralsReceived")
+  parrainageReferrals ParrainageReferral[] @relation("parrainageReferralsMade")
   congesDemandes    DemandeConge[] @relation("congesDemandes")
   congesValides     DemandeConge[] @relation("congesValides")
   pushSubscriptions PushSubscription[]
@@ -772,6 +781,7 @@ model Ambassador {
   commissions    AmbassadorCommission[]
   rewards        MonthlyReward[]
   referredCompanies Company[] @relation("ambassadorReferrals")
+  parrainageReferrals ParrainageReferral[] @relation("parrainageAmbReferrals")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -820,4 +830,44 @@ model MonthlyReward {
   @@unique([ambassadorId, month, year])
   @@index([month, year])
   @@map("monthly_rewards")
+}
+
+// ── Unified Parrainage System (commission-based) ──────────
+
+model ParrainageReferral {
+  id                  String    @id @default(cuid())
+  parrainUserId       String?
+  parrainAmbassadorId String?
+  filleulCompanyId    String    @unique
+  status              String    @default("active") // active, churned
+  createdAt           DateTime  @default(now())
+  churnedAt           DateTime?
+
+  parrainUser       User?       @relation("parrainageReferralsMade", fields: [parrainUserId], references: [id])
+  parrainAmbassador Ambassador? @relation("parrainageAmbReferrals", fields: [parrainAmbassadorId], references: [id])
+  filleulCompany    Company     @relation("parrainageFilleul", fields: [filleulCompanyId], references: [id])
+  commissions       ParrainageCommission[]
+
+  @@index([parrainUserId])
+  @@index([parrainAmbassadorId])
+  @@map("parrainage_referrals")
+}
+
+model ParrainageCommission {
+  id                String    @id @default(cuid())
+  referralId        String
+  amount            Float
+  percentage        Float
+  sourcePaymentId   String?   @unique
+  status            String    @default("pending") // pending, paid, failed
+  periodMonth       DateTime
+  paidAt            DateTime?
+  stripeTransferId  String?
+  createdAt         DateTime  @default(now())
+
+  referral ParrainageReferral @relation(fields: [referralId], references: [id], onDelete: Cascade)
+
+  @@index([referralId])
+  @@index([status])
+  @@map("parrainage_commissions")
 }

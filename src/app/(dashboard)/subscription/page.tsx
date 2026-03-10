@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button, Card, PageLoader } from '@/components/ui';
-import { Check, Crown, Rocket, ArrowRight, ExternalLink, Sparkles, Zap, ArrowUpRight, Settings, Users } from 'lucide-react';
+import { Check, Crown, Rocket, ArrowRight, ExternalLink, Sparkles, Zap, ArrowUpRight, Settings, Users, Gift } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface SubscriptionInfo {
@@ -90,6 +90,10 @@ export default function SubscriptionPage() {
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [referralCode, setReferralCode] = useState('');
+  const [referralStatus, setReferralStatus] = useState<{ valid: boolean; parrainName?: string; error?: string } | null>(null);
+  const [referralChecking, setReferralChecking] = useState(false);
+  const [hasExistingParrain, setHasExistingParrain] = useState(false);
 
   useEffect(() => {
     fetch('/api/subscription')
@@ -97,6 +101,14 @@ export default function SubscriptionPage() {
       .then(setSubscription)
       .catch(() => toast.error('Impossible de charger l\'abonnement'))
       .finally(() => setLoading(false));
+
+    // Check if company already has a parrain
+    fetch('/api/affiliation/verifier?code=__CHECK_EXISTING__')
+      .then(r => r.json())
+      .then(data => {
+        if (data.error?.includes('deja un parrain')) setHasExistingParrain(true);
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -108,6 +120,20 @@ export default function SubscriptionPage() {
     }
   }, [searchParams]);
 
+  const handleVerifyCode = async () => {
+    if (!referralCode.trim()) return;
+    setReferralChecking(true);
+    try {
+      const res = await fetch(`/api/affiliation/verifier?code=${encodeURIComponent(referralCode.trim())}`);
+      const data = await res.json();
+      setReferralStatus(data);
+    } catch {
+      setReferralStatus({ valid: false, error: 'Erreur de verification' });
+    } finally {
+      setReferralChecking(false);
+    }
+  };
+
   const handleCheckout = async (priceId: string) => {
     if (!priceId) {
       toast.error('Plan non configure. Contactez le support.');
@@ -118,7 +144,10 @@ export default function SubscriptionPage() {
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId }),
+        body: JSON.stringify({
+          priceId,
+          ...(referralStatus?.valid ? { referralCode: referralCode.trim() } : {}),
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -208,6 +237,52 @@ export default function SubscriptionPage() {
                 <ExternalLink className="w-3 h-3 ml-1.5 opacity-50" />
               </Button>
             </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Referral code section — only for first-time subscribers */}
+      {!hasActive && !hasExistingParrain && (
+        <div className="max-w-2xl mx-auto mb-10">
+          <Card className="p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center">
+                <Gift className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-zinc-900">Code parrain (optionnel)</p>
+                <p className="text-xs text-zinc-400">Le code ne peut etre saisi qu&apos;au premier paiement</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={referralCode}
+                onChange={(e) => {
+                  setReferralCode(e.target.value.toUpperCase());
+                  setReferralStatus(null);
+                }}
+                placeholder="STR-XXXXX"
+                className="flex-1 px-4 py-2.5 text-sm font-mono bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent uppercase tracking-wider"
+                maxLength={10}
+              />
+              <button
+                onClick={handleVerifyCode}
+                disabled={referralChecking || !referralCode.trim()}
+                className="px-4 py-2.5 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {referralChecking ? 'Verification...' : 'Appliquer'}
+              </button>
+            </div>
+            {referralStatus && (
+              <div className={`mt-3 flex items-center gap-2 text-sm ${referralStatus.valid ? 'text-emerald-600' : 'text-red-500'}`}>
+                {referralStatus.valid ? (
+                  <><Check className="w-4 h-4" /> Code valide — parrain : {referralStatus.parrainName}</>
+                ) : (
+                  <><span className="text-red-500">&#10060;</span> {referralStatus.error}</>
+                )}
+              </div>
+            )}
           </Card>
         </div>
       )}

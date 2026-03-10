@@ -17,7 +17,7 @@ export async function GET() {
       where: { ambassadorReferredById: ambassador.id, subscriptionStatus: 'active' },
     });
     const myTier = (ambassador.customTier as AmbassadorTier) || getTierFromActiveCount(myActiveCount);
-    const isEligible = myTier !== 'bronze'; // Argent+ can participate
+    const isEligible = myTier !== 'starter'; // Booster+ can participate
 
     // Get all ambassadors with referrals this month
     const ambassadors = await prisma.ambassador.findMany({
@@ -33,7 +33,7 @@ export async function GET() {
       },
     });
 
-    // Build leaderboard with tier info — only show Argent+ ambassadors
+    // Build leaderboard with tier info — only show Booster+ ambassadors
     const entries = await Promise.all(
       ambassadors
         .filter(a => a.referredCompanies.length > 0)
@@ -52,15 +52,15 @@ export async function GET() {
         })
     );
 
-    // Leaderboard: only Argent+ ambassadors
+    // Leaderboard: only Booster+ ambassadors
     const leaderboard = entries
-      .filter(a => a.tier !== 'bronze')
+      .filter(a => a.tier !== 'starter')
       .sort((a, b) => b.referralsThisMonth - a.referralsThisMonth)
       .slice(0, 10);
 
     // My rank among eligible
     const allEligible = entries
-      .filter(a => a.tier !== 'bronze')
+      .filter(a => a.tier !== 'starter')
       .sort((a, b) => b.referralsThisMonth - a.referralsThisMonth);
     const myRankIdx = allEligible.findIndex(a => a.id === ambassador.id);
     const myRank = myRankIdx >= 0 ? myRankIdx + 1 : null;

@@ -183,8 +183,8 @@ export default function AmbassadeurDashboardContent() {
           <div className="w-full bg-zinc-100 rounded-full h-2.5">
             <div className="bg-brand-600 h-2.5 rounded-full transition-all" style={{ width: `${progressPercent}%` }} />
           </div>
-          {/* Bronze unlock message */}
-          {data.tier === 'bronze' && (
+          {/* Starter unlock message */}
+          {data.tier === 'starter' && (
             <p className="text-xs text-amber-600 mt-2 font-medium">
               Plus que {lb.remainingToUnlock} artisan{lb.remainingToUnlock > 1 ? 's' : ''} pour débloquer le classement mensuel et les récompenses !
             </p>

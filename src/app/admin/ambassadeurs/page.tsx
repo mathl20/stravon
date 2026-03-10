@@ -175,7 +175,7 @@ export default function AdminAmbassadeursPage() {
           <h2 className="text-sm font-semibold text-zinc-900">Répartition par palier</h2>
         </div>
         <div className="grid grid-cols-4 gap-3">
-          {(['bronze', 'argent', 'or', 'diamant'] as const).map((tier) => {
+          {(['starter', 'booster', 'expert', 'elite'] as const).map((tier) => {
             const TIcon = tierIcons[tier];
             return (
               <div key={tier} className={`rounded-xl p-3 text-center ${tierBadge[tier]}`}>
@@ -328,10 +328,10 @@ export default function AdminAmbassadeursPage() {
                         onClick={(e) => e.stopPropagation()}
                       >
                         <option value="">Palier auto</option>
-                        <option value="bronze">Bronze (15%)</option>
-                        <option value="argent">Argent (20%)</option>
-                        <option value="or">Or (25%)</option>
-                        <option value="diamant">Diamant (30%)</option>
+                        <option value="starter">Starter (10%)</option>
+                        <option value="booster">Booster (15%)</option>
+                        <option value="expert">Expert (20%)</option>
+                        <option value="elite">Elite (25%)</option>
                       </select>
                     </div>
                   </div>

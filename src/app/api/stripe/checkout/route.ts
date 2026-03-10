@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    const { priceId, returnPath } = await request.json();
+    const { priceId, returnPath, referralCode } = await request.json();
     if (!priceId) {
       return NextResponse.json({ error: 'priceId requis' }, { status: 400 });
     }
@@ -86,6 +86,7 @@ export async function POST(request: Request) {
       cancel_url: returnPath ? `${appUrl}${returnPath}?subscription=canceled` : `${appUrl}/subscription?canceled=true`,
       metadata: {
         companyId: company.id,
+        ...(referralCode ? { referralCode: referralCode.trim().toUpperCase() } : {}),
       },
     });
 

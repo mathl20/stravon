@@ -69,9 +69,9 @@ export async function GET(request: NextRequest) {
         })
     );
 
-    // Only Argent+ can win rewards
+    // Only Booster+ can win rewards
     const leaderboard = eligible
-      .filter(a => a.tier !== 'bronze')
+      .filter(a => a.tier !== 'starter')
       .sort((a, b) => b.referralsCount - a.referralsCount);
 
     const winners = leaderboard.slice(0, 3);

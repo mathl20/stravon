@@ -83,7 +83,7 @@ export async function GET() {
         tierName: a.tierName,
         referralsThisMonth: a.referrals.filter(r => new Date(r.createdAt) >= startOfMonth).length,
       }))
-      .filter(a => a.referralsThisMonth > 0 && a.tier !== 'bronze')
+      .filter(a => a.referralsThisMonth > 0 && a.tier !== 'starter')
       .sort((a, b) => b.referralsThisMonth - a.referralsThisMonth)
       .slice(0, 10);
 

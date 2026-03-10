@@ -50,6 +50,8 @@ export async function POST(request: NextRequest) {
         await handleAffiliateCommission(invoice);
         // Track ambassador commissions
         await handleAmbassadorCommission(invoice);
+        // Track unified parrainage commissions
+        await handleParrainageCommission(invoice);
         break;
       }
       case 'invoice.payment_failed': {
@@ -90,10 +92,16 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     });
   }
 
-  // Handle referral reward
+  // Handle referral reward (legacy free-month system)
   const customerEmail = session.customer_email || session.customer_details?.email;
   if (customerEmail) {
     await handleReferralReward(customerEmail);
+  }
+
+  // Handle parrainage code from checkout
+  const referralCode = session.metadata?.referralCode;
+  if (referralCode && companyId) {
+    await createParrainageReferral(referralCode, companyId);
   }
 }
 
@@ -114,6 +122,11 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const customerId = subscription.customer as string;
 
+  const company = await prisma.company.findFirst({
+    where: { stripeCustomerId: customerId },
+    select: { id: true },
+  });
+
   await prisma.company.updateMany({
     where: { stripeCustomerId: customerId },
     data: {
@@ -122,6 +135,14 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       stripePriceId: null,
     },
   });
+
+  // Mark parrainage referral as churned
+  if (company) {
+    await prisma.parrainageReferral.updateMany({
+      where: { filleulCompanyId: company.id, status: 'active' },
+      data: { status: 'churned', churnedAt: new Date() },
+    });
+  }
 }
 
 // ── Referral reward ────────────────────────────────────────
@@ -346,6 +367,24 @@ async function handleConnectAccountUpdated(account: Stripe.Account) {
     return;
   }
 
+  // Check if this is a user parrain's Connect account
+  const parrainUser = await prisma.user.findFirst({
+    where: { parrainStripeConnectId: account.id },
+    select: { id: true, parrainStripeOnboarded: true, parrainageBalance: true },
+  });
+
+  if (parrainUser && payoutsEnabled && !parrainUser.parrainStripeOnboarded) {
+    await prisma.user.update({
+      where: { id: parrainUser.id },
+      data: { parrainStripeOnboarded: true },
+    });
+    console.log(`Connect account ${account.id} is now active for parrain user ${parrainUser.id}`);
+    if (parrainUser.parrainageBalance >= MIN_TRANSFER_AMOUNT) {
+      await attemptParrainageTransfer(parrainUser.id);
+    }
+    return;
+  }
+
   // Check if this is an ambassador's Connect account
   const ambassador = await prisma.ambassador.findFirst({
     where: { stripeConnectAccountId: account.id },
@@ -452,6 +491,176 @@ async function handleAmbassadorCommission(invoice: Stripe.Invoice) {
   }
 
   await attemptAmbassadorTransfer(ambassador.id);
+}
+
+// ── Unified Parrainage System ──────────────────────────────
+
+async function createParrainageReferral(code: string, filleulCompanyId: string) {
+  try {
+    // Check if referral already exists for this company
+    const existing = await prisma.parrainageReferral.findUnique({
+      where: { filleulCompanyId },
+    });
+    if (existing) return; // Already has a parrain
+
+    // Find parrain by code (user or ambassador)
+    const parrainUser = await prisma.user.findFirst({
+      where: { referralCode: { equals: code, mode: 'insensitive' } },
+      select: { id: true, companyId: true },
+    });
+
+    if (parrainUser) {
+      // Anti-fraud: same company check
+      if (parrainUser.companyId === filleulCompanyId) return;
+
+      await prisma.parrainageReferral.create({
+        data: {
+          parrainUserId: parrainUser.id,
+          filleulCompanyId,
+        },
+      });
+      console.log(`Parrainage referral created: user ${parrainUser.id} -> company ${filleulCompanyId}`);
+      return;
+    }
+
+    const ambassador = await prisma.ambassador.findFirst({
+      where: { affiliateCode: { equals: code, mode: 'insensitive' } },
+      select: { id: true },
+    });
+
+    if (ambassador) {
+      await prisma.parrainageReferral.create({
+        data: {
+          parrainAmbassadorId: ambassador.id,
+          filleulCompanyId,
+        },
+      });
+      console.log(`Parrainage referral created: ambassador ${ambassador.id} -> company ${filleulCompanyId}`);
+    }
+  } catch (error) {
+    console.error('Error creating parrainage referral:', error);
+  }
+}
+
+async function handleParrainageCommission(invoice: Stripe.Invoice) {
+  const customerId = invoice.customer as string;
+  if (!customerId) return;
+
+  const amountPaid = (invoice.amount_paid || 0) / 100;
+  if (amountPaid <= 0) return;
+
+  const company = await prisma.company.findFirst({
+    where: { stripeCustomerId: customerId },
+    select: { id: true, subscriptionStatus: true },
+  });
+  if (!company) return;
+  if (company.subscriptionStatus !== 'active') return;
+
+  // Find referral for this company
+  const referral = await prisma.parrainageReferral.findUnique({
+    where: { filleulCompanyId: company.id, status: 'active' },
+  });
+  if (!referral) return;
+
+  // Check if commission already exists for this invoice
+  const existingCommission = await prisma.parrainageCommission.findFirst({
+    where: { sourcePaymentId: invoice.id },
+  });
+  if (existingCommission) return;
+
+  // Count active referrals for tier calculation
+  let activeCount = 0;
+  const { getCommissionRateForCount } = await import('@/lib/parrainage');
+
+  if (referral.parrainUserId) {
+    activeCount = await prisma.parrainageReferral.count({
+      where: { parrainUserId: referral.parrainUserId, status: 'active' },
+    });
+  } else if (referral.parrainAmbassadorId) {
+    activeCount = await prisma.parrainageReferral.count({
+      where: { parrainAmbassadorId: referral.parrainAmbassadorId, status: 'active' },
+    });
+  }
+
+  const rate = getCommissionRateForCount(activeCount);
+  const commissionAmount = Math.round(amountPaid * rate * 100) / 100;
+  const now = new Date();
+  const periodMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  // Create commission
+  await prisma.parrainageCommission.create({
+    data: {
+      referralId: referral.id,
+      amount: commissionAmount,
+      percentage: rate,
+      sourcePaymentId: invoice.id,
+      status: 'pending',
+      periodMonth,
+    },
+  });
+
+  // Update parrain balance
+  if (referral.parrainUserId) {
+    await prisma.user.update({
+      where: { id: referral.parrainUserId },
+      data: { parrainageBalance: { increment: commissionAmount } },
+    });
+    console.log(`Parrainage commission: ${commissionAmount}€ (${(rate * 100).toFixed(0)}%) for user ${referral.parrainUserId}`);
+    await attemptParrainageTransfer(referral.parrainUserId);
+  } else if (referral.parrainAmbassadorId) {
+    await prisma.ambassador.update({
+      where: { id: referral.parrainAmbassadorId },
+      data: { balance: { increment: commissionAmount } },
+    });
+    console.log(`Parrainage commission: ${commissionAmount}€ (${(rate * 100).toFixed(0)}%) for ambassador ${referral.parrainAmbassadorId}`);
+    await attemptAmbassadorTransfer(referral.parrainAmbassadorId);
+  }
+}
+
+async function attemptParrainageTransfer(userId: string) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, parrainageBalance: true, parrainStripeConnectId: true, parrainStripeOnboarded: true },
+    });
+    if (!user || !user.parrainStripeConnectId || !user.parrainStripeOnboarded) return;
+    if (user.parrainageBalance < MIN_TRANSFER_AMOUNT) return;
+
+    const stripe = getStripe();
+    const transferAmountCents = Math.round(user.parrainageBalance * 100);
+
+    const transfer = await stripe.transfers.create({
+      amount: transferAmountCents,
+      currency: 'eur',
+      destination: user.parrainStripeConnectId,
+      description: 'Commission parrainage Stravon',
+      metadata: { userId },
+    });
+
+    // Mark commissions as paid
+    const referralIds = await prisma.parrainageReferral.findMany({
+      where: { parrainUserId: userId },
+      select: { id: true },
+    });
+
+    await prisma.$transaction([
+      prisma.parrainageCommission.updateMany({
+        where: {
+          referralId: { in: referralIds.map(r => r.id) },
+          status: 'pending',
+        },
+        data: { status: 'paid', paidAt: new Date(), stripeTransferId: transfer.id },
+      }),
+      prisma.user.update({
+        where: { id: userId },
+        data: { parrainageBalance: 0 },
+      }),
+    ]);
+
+    console.log(`Parrainage transfer: ${user.parrainageBalance}€ to ${user.parrainStripeConnectId} (${transfer.id})`);
+  } catch (error) {
+    console.error(`Failed parrainage transfer for user ${userId}:`, error);
+  }
 }
 
 async function attemptAmbassadorTransfer(ambassadorId: string) {

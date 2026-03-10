@@ -64,32 +64,33 @@ export async function getCurrentAmbassador() {
   }
 }
 
-// Tier calculation
-export type AmbassadorTier = 'bronze' | 'argent' | 'or' | 'diamant';
+// Tier calculation — unified with parrainage system
+export type AmbassadorTier = 'starter' | 'booster' | 'expert' | 'elite';
 
 interface TierInfo {
   name: string;
+  emoji: string;
   rate: number;
   min: number;
   max: number | null;
 }
 
 export const TIERS: Record<AmbassadorTier, TierInfo> = {
-  bronze: { name: 'Bronze', rate: 0.15, min: 0, max: 9 },
-  argent: { name: 'Argent', rate: 0.20, min: 10, max: 19 },
-  or: { name: 'Or', rate: 0.25, min: 20, max: 49 },
-  diamant: { name: 'Diamant', rate: 0.30, min: 50, max: null },
+  starter: { name: 'Starter', emoji: '🌱', rate: 0.10, min: 0, max: 4 },
+  booster: { name: 'Booster', emoji: '⚡', rate: 0.15, min: 5, max: 14 },
+  expert: { name: 'Expert', emoji: '🔥', rate: 0.20, min: 15, max: 29 },
+  elite: { name: 'Élite', emoji: '👑', rate: 0.25, min: 30, max: null },
 };
 
 export function getTierFromActiveCount(count: number): AmbassadorTier {
-  if (count >= 50) return 'diamant';
-  if (count >= 20) return 'or';
-  if (count >= 10) return 'argent';
-  return 'bronze';
+  if (count >= 30) return 'elite';
+  if (count >= 15) return 'expert';
+  if (count >= 5) return 'booster';
+  return 'starter';
 }
 
 export function getCommissionRate(ambassador: { customCommissionRate: number | null; customTier: string | null }, activeReferrals: number): number {
   if (ambassador.customCommissionRate != null) return ambassador.customCommissionRate;
   const tier = (ambassador.customTier as AmbassadorTier) || getTierFromActiveCount(activeReferrals);
-  return TIERS[tier]?.rate || 0.15;
+  return TIERS[tier]?.rate || 0.10;
 }

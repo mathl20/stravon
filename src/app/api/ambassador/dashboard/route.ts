@@ -32,9 +32,9 @@ export async function GET() {
     // Next tier progress
     let nextTier: AmbassadorTier | null = null;
     let nextTierMin = 0;
-    if (tier === 'bronze') { nextTier = 'argent'; nextTierMin = 10; }
-    else if (tier === 'argent') { nextTier = 'or'; nextTierMin = 20; }
-    else if (tier === 'or') { nextTier = 'diamant'; nextTierMin = 50; }
+    if (tier === 'starter') { nextTier = 'booster'; nextTierMin = 5; }
+    else if (tier === 'booster') { nextTier = 'expert'; nextTierMin = 15; }
+    else if (tier === 'expert') { nextTier = 'elite'; nextTierMin = 30; }
 
     // Commissions
     const commissions = await prisma.ambassadorCommission.findMany({
@@ -75,7 +75,7 @@ export async function GET() {
         nextTierName: nextTier ? TIERS[nextTier].name : null,
         nextTierMin,
         totalRewardsEarned: totalRewardsEarned._sum.amount || 0,
-        isLeaderboardEligible: tier !== 'bronze',
+        isLeaderboardEligible: tier !== 'starter',
         connectOnboarded: ambassador.stripeConnectOnboarded,
         hasConnectAccount: !!ambassador.stripeConnectAccountId,
         referrals: referredCompanies.map(c => ({
