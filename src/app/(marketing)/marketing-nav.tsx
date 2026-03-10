@@ -32,6 +32,7 @@ export function MarketingNav() {
         </ul>
 
         <div className="nav-right">
+          <Link href="/ambassadeur/login" className="nav-amb-link">Espace Ambassadeur</Link>
           <Link href="/login" className="nav-login">Connexion</Link>
           <Link href="/register" className="btn-accent">Créer un compte</Link>
         </div>
@@ -54,6 +55,7 @@ export function MarketingNav() {
               <a href="#tarifs" onClick={() => setOpen(false)}>Tarifs</a>
               <a href="#ambassadeurs" onClick={() => setOpen(false)}>Ambassadeurs</a>
               <div className="nav-mobile-divider" />
+              <Link href="/ambassadeur/login" onClick={() => setOpen(false)}>Espace Ambassadeur</Link>
               <Link href="/login" onClick={() => setOpen(false)}>Connexion</Link>
               <Link href="/register" className="nav-mobile-cta" onClick={() => setOpen(false)}>
                 Créer un compte

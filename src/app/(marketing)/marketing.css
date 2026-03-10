@@ -121,6 +121,19 @@ html, body { overflow-x: hidden; }
   gap: 12px;
   flex-shrink: 0;
 }
+.nav-amb-link {
+  color: var(--accent-light);
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  border: 1px solid var(--border-accent);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.nav-amb-link:hover { background: rgba(108,99,255,0.18); border-color: var(--accent); }
 .nav-login {
   color: var(--text-secondary);
   text-decoration: none;
