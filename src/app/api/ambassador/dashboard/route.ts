@@ -51,6 +51,12 @@ export async function GET() {
       .filter(c => new Date(c.createdAt) >= startOfMonth)
       .reduce((s, c) => s + c.amount, 0);
 
+    // Total rewards earned from leaderboard
+    const totalRewardsEarned = await prisma.monthlyReward.aggregate({
+      where: { ambassadorId: ambassador.id },
+      _sum: { amount: true },
+    });
+
     return NextResponse.json({
       data: {
         ambassadorId: ambassador.id,
@@ -68,6 +74,8 @@ export async function GET() {
         nextTier,
         nextTierName: nextTier ? TIERS[nextTier].name : null,
         nextTierMin,
+        totalRewardsEarned: totalRewardsEarned._sum.amount || 0,
+        isLeaderboardEligible: tier !== 'bronze',
         connectOnboarded: ambassador.stripeConnectOnboarded,
         hasConnectAccount: !!ambassador.stripeConnectAccountId,
         referrals: referredCompanies.map(c => ({

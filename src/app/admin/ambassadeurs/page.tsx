@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, TrendingUp, Wallet, Trophy, ChevronDown, ChevronUp, CreditCard, CheckCircle2, Award, Star, Crown, Gem } from 'lucide-react';
+import { Users, TrendingUp, Wallet, Trophy, ChevronDown, ChevronUp, CheckCircle2, Award, Star, Crown, Gem, Gift, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { apiFetch, formatCurrency } from '@/lib/utils';
@@ -32,6 +32,29 @@ interface AmbassadorData {
 interface LeaderboardEntry {
   id: string;
   name: string;
+  tier: string;
+  tierName: string;
+  referralsThisMonth: number;
+}
+
+interface RewardWinner {
+  id: string;
+  name: string;
+  rank: number;
+  amount: number;
+  referralsCount: number;
+}
+
+interface RewardMonth {
+  month: number;
+  year: number;
+  winners: RewardWinner[];
+}
+
+interface PendingReward {
+  name: string;
+  rank: number;
+  amount: number;
   referralsThisMonth: number;
 }
 
@@ -48,16 +71,36 @@ const connectBadge: Record<string, { label: string; cls: string }> = {
   not_created: { label: 'Non configuré', cls: 'bg-zinc-100 text-zinc-500' },
 };
 
+const MONTH_NAMES = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+
 export default function AdminAmbassadeursPage() {
   const [ambassadors, setAmbassadors] = useState<AmbassadorData[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [tierCounts, setTierCounts] = useState<Record<string, number>>({ bronze: 0, argent: 0, or: 0, diamant: 0 });
+  const [rewardHistory, setRewardHistory] = useState<RewardMonth[]>([]);
+  const [totalRewardsPaid, setTotalRewardsPaid] = useState(0);
+  const [pendingRewards, setPendingRewards] = useState<PendingReward[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [paying, setPaying] = useState<string | null>(null);
 
   const fetchData = () => {
-    apiFetch<{ data: AmbassadorData[]; leaderboard: LeaderboardEntry[] }>('/api/admin/ambassadors')
-      .then(r => { setAmbassadors(r.data); setLeaderboard(r.leaderboard); })
+    apiFetch<{
+      data: AmbassadorData[];
+      leaderboard: LeaderboardEntry[];
+      tierCounts: Record<string, number>;
+      rewardHistory: RewardMonth[];
+      totalRewardsPaid: number;
+      pendingRewards: PendingReward[];
+    }>('/api/admin/ambassadors')
+      .then(r => {
+        setAmbassadors(r.data);
+        setLeaderboard(r.leaderboard);
+        setTierCounts(r.tierCounts);
+        setRewardHistory(r.rewardHistory);
+        setTotalRewardsPaid(r.totalRewardsPaid);
+        setPendingRewards(r.pendingRewards);
+      })
       .catch(() => toast.error('Erreur de chargement'))
       .finally(() => setLoading(false));
   };
@@ -125,34 +168,105 @@ export default function AdminAmbassadeursPage() {
         </div>
       </div>
 
-      {/* Leaderboard */}
-      {leaderboard.length > 0 && (
-        <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
-          <div className="px-5 py-3 border-b border-zinc-100 flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-yellow-500" />
-            <h2 className="text-sm font-semibold text-zinc-900">Leaderboard du mois</h2>
-          </div>
-          <div className="divide-y divide-zinc-50">
-            {leaderboard.map((e, i) => (
-              <div key={e.id} className="px-5 py-2.5 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                    i === 0 ? 'bg-yellow-100 text-yellow-700' : i === 1 ? 'bg-zinc-100 text-zinc-600' : i === 2 ? 'bg-amber-100 text-amber-700' : 'bg-zinc-50 text-zinc-400'
-                  }`}>{i + 1}</span>
-                  <span className="text-sm text-zinc-700">{e.name}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold">{e.referralsThisMonth} artisans</span>
-                  {i < 3 && <span className="text-xs font-bold text-yellow-600">+{i === 0 ? '100' : i === 1 ? '50' : '25'}€</span>}
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* Tier distribution */}
+      <div className="bg-white border border-zinc-200 rounded-2xl p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <BarChart3 className="w-4 h-4 text-brand-600" />
+          <h2 className="text-sm font-semibold text-zinc-900">Répartition par palier</h2>
         </div>
-      )}
+        <div className="grid grid-cols-4 gap-3">
+          {(['bronze', 'argent', 'or', 'diamant'] as const).map((tier) => {
+            const TIcon = tierIcons[tier];
+            return (
+              <div key={tier} className={`rounded-xl p-3 text-center ${tierBadge[tier]}`}>
+                <TIcon className="w-5 h-5 mx-auto mb-1" />
+                <p className="text-xl font-bold">{tierCounts[tier]}</p>
+                <p className="text-[10px] font-medium">{tier.charAt(0).toUpperCase() + tier.slice(1)}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Leaderboard */}
+        <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+          <div className="px-5 py-3 border-b border-zinc-100 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-yellow-500" />
+              <h2 className="text-sm font-semibold text-zinc-900">Classement du mois (Argent+)</h2>
+            </div>
+          </div>
+          {leaderboard.length > 0 ? (
+            <div className="divide-y divide-zinc-50">
+              {leaderboard.map((e, i) => (
+                <div key={e.id} className="px-5 py-2.5 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                      i === 0 ? 'bg-yellow-100 text-yellow-700' : i === 1 ? 'bg-zinc-100 text-zinc-600' : i === 2 ? 'bg-amber-100 text-amber-700' : 'bg-zinc-50 text-zinc-400'
+                    }`}>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</span>
+                    <div>
+                      <span className="text-sm text-zinc-700">{e.name}</span>
+                      <span className={`ml-2 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${tierBadge[e.tier] || tierBadge.bronze}`}>
+                        {e.tierName}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold">{e.referralsThisMonth} artisans</span>
+                    {i < 3 && <span className="text-xs font-bold text-yellow-600">+{i === 0 ? '100' : i === 1 ? '50' : '25'}€</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="px-5 py-8 text-center text-sm text-zinc-400">Aucun parrainage éligible ce mois</div>
+          )}
+          {pendingRewards.length > 0 && (
+            <div className="px-5 py-2 bg-amber-50 border-t border-amber-100 text-xs text-amber-700">
+              Récompenses à verser : {pendingRewards.map(p => `${p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : '🥉'} ${p.name} (${p.amount}€)`).join(' · ')}
+            </div>
+          )}
+        </div>
+
+        {/* Reward history */}
+        <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+          <div className="px-5 py-3 border-b border-zinc-100 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Gift className="w-4 h-4 text-emerald-600" />
+              <h2 className="text-sm font-semibold text-zinc-900">Historique des récompenses</h2>
+            </div>
+            <span className="text-xs font-semibold text-emerald-600">Total : {formatCurrency(totalRewardsPaid)}</span>
+          </div>
+          {rewardHistory.length > 0 ? (
+            <div className="divide-y divide-zinc-100 max-h-80 overflow-y-auto">
+              {rewardHistory.map((rh) => (
+                <div key={`${rh.year}-${rh.month}`} className="px-5 py-3">
+                  <p className="text-xs font-semibold text-zinc-500 mb-2">{MONTH_NAMES[rh.month]} {rh.year}</p>
+                  <div className="space-y-1.5">
+                    {rh.winners.map((w) => (
+                      <div key={w.id} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <span>{w.rank === 1 ? '🥇' : w.rank === 2 ? '🥈' : '🥉'}</span>
+                          <span className="text-zinc-700">{w.name}</span>
+                          <span className="text-xs text-zinc-400">({w.referralsCount} artisans)</span>
+                        </div>
+                        <span className="font-semibold text-emerald-600">+{formatCurrency(w.amount)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="px-5 py-8 text-center text-sm text-zinc-400">Aucune récompense versée</div>
+          )}
+        </div>
+      </div>
 
       {/* Ambassadors list */}
       <div className="space-y-4">
+        <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Tous les ambassadeurs</h2>
         {ambassadors.map((amb) => {
           const TierIcon = tierIcons[amb.tier] || Award;
           const cb = connectBadge[amb.connectStatus] || connectBadge.not_created;

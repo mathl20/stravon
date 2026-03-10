@@ -760,6 +760,7 @@ model Ambassador {
   customCommissionRate    Float?   // Override commission rate (e.g. 0.25)
 
   commissions    AmbassadorCommission[]
+  rewards        MonthlyReward[]
   referredCompanies Company[] @relation("ambassadorReferrals")
 
   createdAt DateTime @default(now())
@@ -789,4 +790,24 @@ model AmbassadorCommission {
   @@index([referredCompanyId])
   @@index([status])
   @@map("ambassador_commissions")
+}
+
+model MonthlyReward {
+  id            String   @id @default(cuid())
+  ambassadorId  String
+  month         Int      // 1-12
+  year          Int
+  rank          Int      // 1, 2, 3
+  amount        Float    // 100, 50, 25
+  referralsCount Int     // number of referrals that month
+  credited      Boolean  @default(false) // balance credited?
+  creditedAt    DateTime?
+
+  ambassador Ambassador @relation(fields: [ambassadorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([ambassadorId, month, year])
+  @@index([month, year])
+  @@map("monthly_rewards")
 }

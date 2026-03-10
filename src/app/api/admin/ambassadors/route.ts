@@ -26,9 +26,13 @@ export async function GET() {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
+    // Tier distribution
+    const tierCounts: Record<string, number> = { bronze: 0, argent: 0, or: 0, diamant: 0 };
+
     const data = ambassadors.map((amb) => {
       const activeReferrals = amb.referredCompanies.filter(c => c.subscriptionStatus === 'active').length;
       const tier = (amb.customTier as AmbassadorTier) || getTierFromActiveCount(activeReferrals);
+      tierCounts[tier]++;
       const totalEarned = amb.commissions.reduce((s, c) => s + c.amount, 0);
       const monthlyEarnings = amb.commissions
         .filter(c => new Date(c.createdAt) >= startOfMonth)
@@ -70,18 +74,64 @@ export async function GET() {
       };
     });
 
-    // Leaderboard this month
+    // Leaderboard this month (Argent+ only)
     const leaderboard = data
       .map(a => ({
         id: a.id,
         name: a.name,
+        tier: a.tier,
+        tierName: a.tierName,
         referralsThisMonth: a.referrals.filter(r => new Date(r.createdAt) >= startOfMonth).length,
       }))
-      .filter(a => a.referralsThisMonth > 0)
+      .filter(a => a.referralsThisMonth > 0 && a.tier !== 'bronze')
       .sort((a, b) => b.referralsThisMonth - a.referralsThisMonth)
       .slice(0, 10);
 
-    return NextResponse.json({ data, leaderboard });
+    // Reward history — all months
+    const allRewards = await prisma.monthlyReward.findMany({
+      include: { ambassador: { select: { firstName: true, lastName: true } } },
+      orderBy: [{ year: 'desc' }, { month: 'desc' }, { rank: 'asc' }],
+    });
+
+    // Group rewards by month
+    const rewardsByMonth: Record<string, { month: number; year: number; winners: typeof allRewards }> = {};
+    for (const r of allRewards) {
+      const key = `${r.year}-${r.month}`;
+      if (!rewardsByMonth[key]) rewardsByMonth[key] = { month: r.month, year: r.year, winners: [] };
+      rewardsByMonth[key].winners.push(r);
+    }
+    const rewardHistory = Object.values(rewardsByMonth);
+
+    // Total rewards paid
+    const totalRewardsPaid = allRewards.reduce((s, r) => s + r.amount, 0);
+
+    // Current month pending rewards estimate (top 3 of current leaderboard)
+    const pendingRewardAmounts = [100, 50, 25];
+    const pendingRewards = leaderboard.slice(0, 3).map((entry, i) => ({
+      name: entry.name,
+      rank: i + 1,
+      amount: pendingRewardAmounts[i],
+      referralsThisMonth: entry.referralsThisMonth,
+    }));
+
+    return NextResponse.json({
+      data,
+      leaderboard,
+      tierCounts,
+      rewardHistory: rewardHistory.map(rh => ({
+        month: rh.month,
+        year: rh.year,
+        winners: rh.winners.map(w => ({
+          id: w.id,
+          name: `${w.ambassador.firstName} ${w.ambassador.lastName}`,
+          rank: w.rank,
+          amount: w.amount,
+          referralsCount: w.referralsCount,
+        })),
+      })),
+      totalRewardsPaid,
+      pendingRewards,
+    });
   } catch (error) {
     console.error('Admin ambassadors GET error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });

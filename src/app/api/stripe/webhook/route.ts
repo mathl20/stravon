@@ -400,9 +400,14 @@ async function handleAmbassadorCommission(invoice: Stripe.Invoice) {
   });
 
   // Dynamic import to avoid circular deps
-  const { getCommissionRate } = await import('@/lib/ambassador-auth');
+  const { getCommissionRate, getTierFromActiveCount, TIERS } = await import('@/lib/ambassador-auth');
   const rate = getCommissionRate(ambassador, activeReferrals);
   const commissionAmount = Math.round(amountPaid * rate * 100) / 100;
+
+  // Check tier before commission (to detect tier change)
+  const prevActiveCount = activeReferrals - 1; // before this referral became active
+  const prevTier = getTierFromActiveCount(Math.max(0, prevActiveCount));
+  const newTier = getTierFromActiveCount(activeReferrals);
 
   await prisma.$transaction([
     prisma.ambassadorCommission.create({
@@ -426,6 +431,25 @@ async function handleAmbassadorCommission(invoice: Stripe.Invoice) {
     `Ambassador commission: ${commissionAmount}€ (${(rate * 100).toFixed(0)}%) for ambassador ${ambassador.id} ` +
     `from invoice ${invoice.id} (${amountPaid}€)`
   );
+
+  // Send tier unlock email if tier changed (non-blocking)
+  if (prevTier !== newTier && !ambassador.customTier) {
+    try {
+      const amb = await prisma.ambassador.findUnique({
+        where: { id: ambassador.id },
+        select: { email: true, firstName: true },
+      });
+      if (amb) {
+        const { ambassadorTierUnlockTemplate } = await import('@/lib/email-templates');
+        const { sendEmail } = await import('@/lib/mailer');
+        const emailContent = ambassadorTierUnlockTemplate(amb.firstName, TIERS[newTier].name);
+        await sendEmail({ to: amb.email, subject: emailContent.subject, html: emailContent.html });
+        console.log(`Sent tier unlock email to ${amb.email}: ${newTier}`);
+      }
+    } catch (emailErr) {
+      console.error('Failed to send tier unlock email:', emailErr);
+    }
+  }
 
   await attemptAmbassadorTransfer(ambassador.id);
 }

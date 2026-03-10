@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, TrendingUp, Wallet, Copy, Check, ExternalLink, CreditCard, CheckCircle2, Trophy, Award, Star, Crown, Gem, ArrowUp, Clock } from 'lucide-react';
+import { Users, TrendingUp, Wallet, Copy, Check, CreditCard, CheckCircle2, Trophy, Award, Star, Crown, Gem, ArrowUp, Lock, Gift } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { apiFetch, formatCurrency } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
@@ -21,6 +21,8 @@ interface DashboardData {
   nextTier: string | null;
   nextTierName: string | null;
   nextTierMin: number;
+  totalRewardsEarned: number;
+  isLeaderboardEligible: boolean;
   connectOnboarded: boolean;
   hasConnectAccount: boolean;
   referrals: { id: string; name: string; status: string; createdAt: string }[];
@@ -31,7 +33,29 @@ interface LeaderboardEntry {
   id: string;
   name: string;
   referralsThisMonth: number;
+  tier: string;
   isMe: boolean;
+}
+
+interface RewardEntry {
+  id: string;
+  month: number;
+  year: number;
+  rank: number;
+  amount: number;
+  referralsCount: number;
+}
+
+interface LeaderboardData {
+  leaderboard: LeaderboardEntry[];
+  myRank: number | null;
+  myReferralsThisMonth: number;
+  gapToAbove: number | null;
+  isEligible: boolean;
+  myTier: string;
+  remainingToUnlock: number;
+  myRewards: RewardEntry[];
+  month: string;
 }
 
 const tierIcons: Record<string, any> = {
@@ -44,10 +68,11 @@ const tierColors: Record<string, string> = {
   diamant: 'text-violet-600 bg-violet-100',
 };
 
+const MONTH_NAMES = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+
 export default function AmbassadeurDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [leaderboardMonth, setLeaderboardMonth] = useState('');
+  const [lb, setLb] = useState<LeaderboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [connectLoading, setConnectLoading] = useState(false);
@@ -56,8 +81,7 @@ export default function AmbassadeurDashboardPage() {
   useEffect(() => {
     Promise.all([
       apiFetch<{ data: DashboardData }>('/api/ambassador/dashboard').then(r => setData(r.data)),
-      apiFetch<{ data: { leaderboard: LeaderboardEntry[]; month: string } }>('/api/ambassador/leaderboard')
-        .then(r => { setLeaderboard(r.data.leaderboard); setLeaderboardMonth(r.data.month); }),
+      apiFetch<{ data: LeaderboardData }>('/api/ambassador/leaderboard').then(r => setLb(r.data)),
     ])
       .catch(() => toast.error('Erreur de chargement'))
       .finally(() => setLoading(false));
@@ -97,7 +121,7 @@ export default function AmbassadeurDashboardPage() {
       </div>
     );
   }
-  if (!data) return null;
+  if (!data || !lb) return null;
 
   const TierIcon = tierIcons[data.tier] || Award;
   const tierColor = tierColors[data.tier] || tierColors.bronze;
@@ -159,6 +183,12 @@ export default function AmbassadeurDashboardPage() {
           <div className="w-full bg-zinc-100 rounded-full h-2.5">
             <div className="bg-brand-600 h-2.5 rounded-full transition-all" style={{ width: `${progressPercent}%` }} />
           </div>
+          {/* Bronze unlock message */}
+          {data.tier === 'bronze' && (
+            <p className="text-xs text-amber-600 mt-2 font-medium">
+              Plus que {lb.remainingToUnlock} artisan{lb.remainingToUnlock > 1 ? 's' : ''} pour débloquer le classement mensuel et les récompenses !
+            </p>
+          )}
         </div>
       )}
 
@@ -204,40 +234,129 @@ export default function AmbassadeurDashboardPage() {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8">
-        {/* Leaderboard */}
-        <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
-          <div className="px-5 py-3 border-b border-zinc-100 flex items-center gap-2">
+      {/* Leaderboard section */}
+      <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+        <div className="px-5 py-3 border-b border-zinc-100 flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <Trophy className="w-4 h-4 text-yellow-500" />
-            <h2 className="text-sm font-semibold text-zinc-900">Leaderboard — {leaderboardMonth}</h2>
+            <h2 className="text-sm font-semibold text-zinc-900">Classement du mois — {lb.month}</h2>
           </div>
-          {leaderboard.length > 0 ? (
-            <div className="divide-y divide-zinc-50">
-              {leaderboard.map((entry, i) => (
-                <div key={entry.id} className={`px-5 py-3 flex items-center justify-between ${entry.isMe ? 'bg-brand-50/50' : ''}`}>
-                  <div className="flex items-center gap-3">
-                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                      i === 0 ? 'bg-yellow-100 text-yellow-700' :
-                      i === 1 ? 'bg-zinc-100 text-zinc-600' :
-                      i === 2 ? 'bg-amber-100 text-amber-700' :
-                      'bg-zinc-50 text-zinc-400'
-                    }`}>{i + 1}</span>
-                    <span className={`text-sm ${entry.isMe ? 'font-bold text-brand-700' : 'text-zinc-700'}`}>
-                      {entry.name} {entry.isMe && '(vous)'}
-                    </span>
-                  </div>
-                  <span className="text-sm font-semibold text-zinc-900">{entry.referralsThisMonth}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="px-5 py-8 text-center text-sm text-zinc-400">Aucun parrainage ce mois-ci</div>
-          )}
-          <div className="px-5 py-2 bg-zinc-50 text-[10px] text-zinc-400">
-            Top 3 : 100€ / 50€ / 25€ de bonus
+          <div className="flex items-center gap-2 text-[10px] font-bold">
+            <span className="text-yellow-600">🥇 100€</span>
+            <span className="text-zinc-400">🥈 50€</span>
+            <span className="text-amber-600">🥉 25€</span>
           </div>
         </div>
 
+        {lb.isEligible ? (
+          <>
+            {/* My position summary */}
+            {lb.myRank && (
+              <div className="px-5 py-3 bg-brand-50/50 border-b border-brand-100/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-brand-700">
+                      Votre position : {lb.myRank === 1 ? '🥇' : lb.myRank === 2 ? '🥈' : lb.myRank === 3 ? '🥉' : `#${lb.myRank}`}
+                    </span>
+                    <span className="text-xs text-brand-500">{lb.myReferralsThisMonth} artisan{lb.myReferralsThisMonth > 1 ? 's' : ''} ce mois</span>
+                  </div>
+                  {lb.gapToAbove !== null && lb.gapToAbove > 0 && (
+                    <span className="text-xs text-zinc-500">
+                      {lb.gapToAbove} artisan{lb.gapToAbove > 1 ? 's' : ''} pour monter
+                    </span>
+                  )}
+                </div>
+                {lb.myRank <= 3 && (
+                  <p className="text-xs text-emerald-600 font-medium mt-1">
+                    Vous êtes en position de remporter {lb.myRank === 1 ? '100€' : lb.myRank === 2 ? '50€' : '25€'} de bonus !
+                  </p>
+                )}
+              </div>
+            )}
+
+            {lb.leaderboard.length > 0 ? (
+              <div className="divide-y divide-zinc-50">
+                {lb.leaderboard.map((entry, i) => (
+                  <div key={entry.id} className={`px-5 py-3 flex items-center justify-between ${entry.isMe ? 'bg-brand-50/50' : ''}`}>
+                    <div className="flex items-center gap-3">
+                      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                        i === 0 ? 'bg-yellow-100 text-yellow-700' :
+                        i === 1 ? 'bg-zinc-100 text-zinc-600' :
+                        i === 2 ? 'bg-amber-100 text-amber-700' :
+                        'bg-zinc-50 text-zinc-400'
+                      }`}>
+                        {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
+                      </span>
+                      <div>
+                        <span className={`text-sm ${entry.isMe ? 'font-bold text-brand-700' : 'text-zinc-700'}`}>
+                          {entry.name} {entry.isMe && '(vous)'}
+                        </span>
+                        <span className={`ml-2 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${tierColors[entry.tier] || tierColors.bronze}`}>
+                          {entry.tier.charAt(0).toUpperCase() + entry.tier.slice(1)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-semibold text-zinc-900">{entry.referralsThisMonth} artisan{entry.referralsThisMonth > 1 ? 's' : ''}</span>
+                      {i < 3 && <span className="text-xs font-bold text-yellow-600">+{i === 0 ? '100' : i === 1 ? '50' : '25'}€</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="px-5 py-8 text-center text-sm text-zinc-400">Aucun parrainage ce mois-ci parmi les ambassadeurs éligibles</div>
+            )}
+          </>
+        ) : (
+          /* Locked state for Bronze */
+          <div className="px-5 py-10 text-center">
+            <Lock className="w-10 h-10 text-zinc-300 mx-auto mb-3" />
+            <h3 className="text-sm font-semibold text-zinc-700 mb-1">Classement verrouillé</h3>
+            <p className="text-xs text-zinc-400 max-w-sm mx-auto mb-4">
+              Atteignez le palier Argent (10 artisans actifs) pour participer au classement et gagner des récompenses mensuelles.
+            </p>
+            <div className="max-w-xs mx-auto">
+              <div className="flex items-center justify-between text-xs text-zinc-500 mb-1">
+                <span>Progression</span>
+                <span>{data.activeReferrals}/10 artisans</span>
+              </div>
+              <div className="w-full bg-zinc-100 rounded-full h-2">
+                <div className="bg-brand-600 h-2 rounded-full transition-all" style={{ width: `${Math.min(100, (data.activeReferrals / 10) * 100)}%` }} />
+              </div>
+              <p className="text-xs text-brand-600 font-medium mt-2">
+                Plus que {lb.remainingToUnlock} artisan{lb.remainingToUnlock > 1 ? 's' : ''} !
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Reward history */}
+      {lb.myRewards.length > 0 && (
+        <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+          <div className="px-5 py-3 border-b border-zinc-100 flex items-center gap-2">
+            <Gift className="w-4 h-4 text-emerald-600" />
+            <h2 className="text-sm font-semibold text-zinc-900">Historique des récompenses</h2>
+            <span className="ml-auto text-xs text-emerald-600 font-semibold">Total : {formatCurrency(data.totalRewardsEarned)}</span>
+          </div>
+          <div className="divide-y divide-zinc-50">
+            {lb.myRewards.map((r) => (
+              <div key={r.id} className="px-5 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-base">{r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : '🥉'}</span>
+                  <div>
+                    <p className="text-sm font-medium text-zinc-700">{MONTH_NAMES[r.month]} {r.year}</p>
+                    <p className="text-xs text-zinc-400">{r.referralsCount} artisan{r.referralsCount > 1 ? 's' : ''} parrainé{r.referralsCount > 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+                <span className="text-sm font-bold text-emerald-600">+{formatCurrency(r.amount)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="grid md:grid-cols-2 gap-8">
         {/* Referrals */}
         <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
           <div className="px-5 py-3 border-b border-zinc-100">
@@ -261,6 +380,43 @@ export default function AmbassadeurDashboardPage() {
           ) : (
             <div className="px-5 py-8 text-center text-sm text-zinc-400">Aucun artisan parrainé</div>
           )}
+        </div>
+
+        {/* How it works */}
+        <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+          <div className="px-5 py-3 border-b border-zinc-100">
+            <h2 className="text-sm font-semibold text-zinc-900">Récompenses mensuelles</h2>
+          </div>
+          <div className="px-5 py-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <span className="text-lg">🥇</span>
+              <div>
+                <p className="text-sm font-semibold text-zinc-700">1er — 100€ de bonus</p>
+                <p className="text-xs text-zinc-400">Le plus d'artisans parrainés dans le mois</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="text-lg">🥈</span>
+              <div>
+                <p className="text-sm font-semibold text-zinc-700">2ème — 50€ de bonus</p>
+                <p className="text-xs text-zinc-400">Deuxième au classement mensuel</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="text-lg">🥉</span>
+              <div>
+                <p className="text-sm font-semibold text-zinc-700">3ème — 25€ de bonus</p>
+                <p className="text-xs text-zinc-400">Troisième au classement mensuel</p>
+              </div>
+            </div>
+            <div className="pt-2 border-t border-zinc-100">
+              <p className="text-xs text-zinc-400">
+                {lb.isEligible
+                  ? 'Le classement est remis à zéro le 1er de chaque mois. Les bonus sont ajoutés à votre solde et versés via Stripe Connect.'
+                  : 'Accessible dès le palier Argent (10 artisans actifs). Les bonus sont versés via Stripe Connect.'}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
