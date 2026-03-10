@@ -1,54 +1,67 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export function MarketingNav() {
   const [open, setOpen] = useState(false);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      const navbar = document.querySelector('.navbar') as HTMLElement | null;
+      if (navbar) {
+        navbar.style.padding = window.scrollY > 80 ? '10px 0' : '14px 0';
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
-    <nav className="marketing-navbar">
-      <Link href="/" className="marketing-logo">
-        <div className="marketing-logo-icon">⚡</div>
-        <span className="marketing-logo-text">STRAVON</span>
-      </Link>
+    <nav className="navbar">
+      <div className="m-container">
+        <Link href="/" className="nav-brand">
+          <div className="nav-brand-icon">⚡</div>
+          <div className="nav-brand-text">Stravon</div>
+        </Link>
 
-      <ul className="marketing-nav-links">
-        <li><a href="#fonctionnalites">Fonctionnalités</a></li>
-        <li><a href="#tarifs">Tarifs</a></li>
-      </ul>
+        <ul className="nav-links">
+          <li><a href="#fonctionnalites">Fonctionnalités</a></li>
+          <li><a href="#tarifs">Tarifs</a></li>
+          <li><a href="#ambassadeurs">Ambassadeurs</a></li>
+        </ul>
 
-      <div className="marketing-nav-actions">
-        <Link href="/login" className="marketing-nav-login">Connexion</Link>
-        <Link href="/register" className="marketing-nav-register">Créer un compte</Link>
+        <div className="nav-right">
+          <Link href="/login" className="nav-login">Connexion</Link>
+          <Link href="/register" className="btn-accent">Créer un compte</Link>
+        </div>
+
+        <button
+          className="nav-burger"
+          onClick={() => setOpen(!open)}
+          aria-label="Menu"
+        >
+          <span className={`nav-burger-line ${open ? 'open' : ''}`} />
+          <span className={`nav-burger-line ${open ? 'open' : ''}`} />
+          <span className={`nav-burger-line ${open ? 'open' : ''}`} />
+        </button>
+
+        {open && (
+          <>
+            <div className="nav-mobile-overlay" onClick={() => setOpen(false)} />
+            <div className="nav-mobile-menu">
+              <a href="#fonctionnalites" onClick={() => setOpen(false)}>Fonctionnalités</a>
+              <a href="#tarifs" onClick={() => setOpen(false)}>Tarifs</a>
+              <a href="#ambassadeurs" onClick={() => setOpen(false)}>Ambassadeurs</a>
+              <div className="nav-mobile-divider" />
+              <Link href="/login" onClick={() => setOpen(false)}>Connexion</Link>
+              <Link href="/register" className="nav-mobile-cta" onClick={() => setOpen(false)}>
+                Créer un compte
+              </Link>
+            </div>
+          </>
+        )}
       </div>
-
-      {/* Burger button (mobile only) */}
-      <button
-        className="marketing-burger"
-        onClick={() => setOpen(!open)}
-        aria-label="Menu"
-      >
-        <span className={`marketing-burger-line ${open ? 'open' : ''}`} />
-        <span className={`marketing-burger-line ${open ? 'open' : ''}`} />
-        <span className={`marketing-burger-line ${open ? 'open' : ''}`} />
-      </button>
-
-      {/* Mobile menu */}
-      {open && (
-        <>
-          <div className="marketing-mobile-overlay" onClick={() => setOpen(false)} />
-          <div className="marketing-mobile-menu">
-            <a href="#fonctionnalites" onClick={() => setOpen(false)}>Fonctionnalités</a>
-            <a href="#tarifs" onClick={() => setOpen(false)}>Tarifs</a>
-            <div className="marketing-mobile-divider" />
-            <Link href="/login" onClick={() => setOpen(false)}>Connexion</Link>
-            <Link href="/register" className="marketing-mobile-cta" onClick={() => setOpen(false)}>
-              Créer un compte
-            </Link>
-          </div>
-        </>
-      )}
     </nav>
   );
 }
