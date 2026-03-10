@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { Gift, Search, CheckCircle2, AlertCircle, Loader2, Building2 } from 'lucide-react';
+import { Search, CheckCircle2, AlertCircle, Loader2, Building2 } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
 import { apiFetch } from '@/lib/utils';
 
@@ -54,13 +54,8 @@ function PasswordStrength({ password }: { password: string }) {
 
 function RegisterForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const refCode = searchParams.get('ref') || '';
-  const affCode = searchParams.get('aff') || '';
-  const ambCode = searchParams.get('amb') || '';
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [referrerName, setReferrerName] = useState('');
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '', password: '',
     companyName: '', metier: 'multi-services',
@@ -70,15 +65,6 @@ function RegisterForm() {
   const [siretError, setSiretError] = useState('');
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) => { setForm(f => ({ ...f, [k]: e.target.value })); setError(null); };
-
-  useEffect(() => {
-    if (refCode) {
-      fetch(`/api/referral/validate?code=${encodeURIComponent(refCode)}`)
-        .then(r => r.json())
-        .then(data => { if (data.valid) setReferrerName(data.referrerName); })
-        .catch(() => {});
-    }
-  }, [refCode]);
 
   const lookupSiret = useCallback(async (siret: string) => {
     const clean = siret.replace(/\s/g, '');
@@ -151,9 +137,6 @@ function RegisterForm() {
         body: JSON.stringify({
           ...form,
           siret: cleanSiret || undefined,
-          ...(refCode ? { referralCode: refCode } : {}),
-          ...(affCode ? { affiliateCode: affCode } : {}),
-          ...(ambCode ? { ambassadorCode: ambCode } : {}),
         }),
       });
       toast.success('Compte créé !');
@@ -170,16 +153,6 @@ function RegisterForm() {
     <>
       <h1 className="text-xl font-bold text-zinc-900 mb-1">Créer un compte</h1>
       <p className="text-sm text-zinc-500 mb-6">Commencez à gérer votre activité avec STRAVON</p>
-
-      {referrerName && (
-        <div className="flex items-center gap-2.5 p-3 rounded-xl bg-emerald-50 border border-emerald-200 mb-5">
-          <Gift className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-emerald-800">Vous avez été parrainé par {referrerName} !</p>
-            <p className="text-xs text-emerald-600">1 mois offert à l&apos;inscription</p>
-          </div>
-        </div>
-      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm mb-4">
@@ -270,9 +243,5 @@ function RegisterForm() {
 }
 
 export default function RegisterPage() {
-  return (
-    <Suspense>
-      <RegisterForm />
-    </Suspense>
-  );
+  return <RegisterForm />;
 }

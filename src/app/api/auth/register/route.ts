@@ -9,6 +9,7 @@ import { getDefaultPrestations } from '@/lib/prestations';
 import { generateReferralCode } from '@/lib/referral';
 import { sendEmail } from '@/lib/mailer';
 import { verifyEmailTemplate } from '@/lib/email-templates';
+import { cookies } from 'next/headers';
 import { createToken, setAuthCookie, createRefreshToken, setRefreshCookie } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
@@ -17,8 +18,13 @@ export async function POST(request: NextRequest) {
     const parsed = registerSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
 
-    const { firstName, lastName, email, password, companyName, metier, referralCode: refCode, affiliateCode: affCode, ambassadorCode: ambCode, siret, companyAddress, companyPostalCode, companyCity } = parsed.data;
+    const { firstName, lastName, email, password, companyName, metier, referralCode: bodyRefCode, affiliateCode: bodyAffCode, ambassadorCode: bodyAmbCode, siret, companyAddress, companyPostalCode, companyCity } = parsed.data;
     const selectedMetier = metier || 'multi-services';
+
+    // Read referral codes from cookies (set by middleware on /?ref=), with body fallback
+    const refCode = request.cookies.get('stravon_ref')?.value || bodyRefCode || '';
+    const affCode = request.cookies.get('stravon_aff')?.value || bodyAffCode || '';
+    const ambCode = request.cookies.get('stravon_amb')?.value || bodyAmbCode || '';
 
     const exists = await prisma.user.findUnique({ where: { email } });
     if (exists) return NextResponse.json({ error: 'Un compte avec cet email existe déjà' }, { status: 409 });
@@ -122,6 +128,12 @@ export async function POST(request: NextRequest) {
     const refreshToken = await createRefreshToken(result.user.id);
     await setAuthCookie(token);
     await setRefreshCookie(refreshToken);
+
+    // Clear referral cookies after successful registration
+    const jar = await cookies();
+    jar.delete('stravon_ref');
+    jar.delete('stravon_aff');
+    jar.delete('stravon_amb');
 
     return NextResponse.json({
       message: 'Compte créé.',

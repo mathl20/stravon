@@ -63,20 +63,25 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Affiliate link: /?ref=AFF-XXXX → /register?aff=AFF-XXXX
-  // Ambassador link: /?ref=AMB-XXXX → /register?amb=AMB-XXXX
-  if (pathname === '/') {
-    const refParam = request.nextUrl.searchParams.get('ref');
-    if (refParam && refParam.startsWith('AFF-')) {
-      const registerUrl = new URL('/register', request.url);
-      registerUrl.searchParams.set('aff', refParam);
-      return NextResponse.redirect(registerUrl);
+  // Affiliate/Ambassador/Referral links: store code in cookie, stay on current page
+  // Supports /?ref=AFF-XXXX, /?ref=AMB-XXXX, /?ref=USERCODE on any public page
+  const refParam = request.nextUrl.searchParams.get('ref');
+  if (refParam) {
+    // Strip the ref param from URL so user sees a clean URL
+    const cleanUrl = new URL(request.url);
+    cleanUrl.searchParams.delete('ref');
+    const response = NextResponse.redirect(cleanUrl);
+    const cookieOpts = { maxAge: 30 * 24 * 60 * 60, path: '/', sameSite: 'lax' as const, secure: process.env.NODE_ENV === 'production' };
+
+    if (refParam.startsWith('AFF-')) {
+      response.cookies.set('stravon_aff', refParam, cookieOpts);
+    } else if (refParam.startsWith('AMB-')) {
+      response.cookies.set('stravon_amb', refParam, cookieOpts);
+    } else {
+      // User referral code
+      response.cookies.set('stravon_ref', refParam, cookieOpts);
     }
-    if (refParam && refParam.startsWith('AMB-')) {
-      const registerUrl = new URL('/register', request.url);
-      registerUrl.searchParams.set('amb', refParam);
-      return NextResponse.redirect(registerUrl);
-    }
+    return response;
   }
 
   // ── Ambassador routes (separate auth system) ──
