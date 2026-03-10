@@ -1,6 +1,8 @@
 import './marketing.css';
 import { ScrollReveal } from './scroll-reveal';
 
+export const dynamic = 'force-static';
+
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://stravon.fr';
 
 const jsonLd = {

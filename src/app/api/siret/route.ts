@@ -34,6 +34,8 @@ export async function GET(request: NextRequest) {
       address: siege?.adresse || [siege?.numero_voie, siege?.type_voie, siege?.libelle_voie].filter(Boolean).join(' ') || '',
       postalCode: siege?.code_postal || '',
       city: siege?.libelle_commune || '',
+    }, {
+      headers: { 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800' },
     });
   } catch {
     return NextResponse.json({ error: 'Erreur lors de la verification du SIRET' }, { status: 500 });

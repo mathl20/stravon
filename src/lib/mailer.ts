@@ -7,14 +7,18 @@ interface SendEmailOptions {
   replyTo?: string;
 }
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend: Resend | null = null;
+function getResend() {
+  if (!_resend) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) throw new Error('Email non configuré. Ajoutez RESEND_API_KEY dans vos variables d\'environnement.');
+    _resend = new Resend(apiKey);
+  }
+  return _resend;
+}
 
 export async function sendEmail({ to, subject, html, replyTo }: SendEmailOptions) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error('[MAILER] RESEND_API_KEY is not set — skipping email send');
-    throw new Error('Email non configuré. Ajoutez RESEND_API_KEY dans vos variables d\'environnement.');
-  }
+  const resend = getResend();
 
   const from = process.env.EMAIL_FROM || 'STRAVON <no-reply@stravon.fr>';
 
