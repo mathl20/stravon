@@ -17,11 +17,11 @@ export default function MentionsLegalesPage() {
       <div style={{ lineHeight: 1.8, color: '#b0b0c0', fontSize: '0.95rem' }}>
         <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#f0f0f5', marginTop: 32, marginBottom: 12 }}>Éditeur du site</h2>
         <p>
-          Le site stravon.fr est édité par la société STRAVON.<br />
-          Adresse : [À compléter]<br />
-          SIRET : [À compléter]<br />
+          Le site stravon.fr est édité par Mathis Rohee, entrepreneur individuel exerçant sous le nom commercial Stravon.<br />
+          Adresse : 1 bis Rue Rollon, 27260 Épaignes<br />
+          SIRET : [En cours d&apos;attribution]<br />
           Email : contact@stravon.fr<br />
-          Directeur de la publication : [À compléter]
+          Directeur de la publication : Mathis Rohee
         </p>
 
         <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#f0f0f5', marginTop: 32, marginBottom: 12 }}>Hébergement</h2>
