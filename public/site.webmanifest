@@ -1,0 +1,21 @@
+{
+  "name": "Stravon",
+  "short_name": "Stravon",
+  "description": "Logiciel de gestion pour artisans du bâtiment",
+  "icons": [
+    {
+      "src": "/icon",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-icon",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#6C63FF",
+  "background_color": "#09090F",
+  "display": "standalone",
+  "start_url": "/"
+}

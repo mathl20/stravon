@@ -58,12 +58,12 @@ interface PendingReward {
   referralsThisMonth: number;
 }
 
-const tierIcons: Record<string, any> = { bronze: Award, argent: Star, or: Crown, diamant: Gem };
+const tierIcons: Record<string, any> = { starter: Award, booster: Star, expert: Crown, elite: Gem };
 const tierBadge: Record<string, string> = {
-  bronze: 'bg-amber-100 text-amber-700',
-  argent: 'bg-zinc-100 text-zinc-600',
-  or: 'bg-yellow-100 text-yellow-700',
-  diamant: 'bg-violet-100 text-violet-700',
+  starter: 'bg-amber-100 text-amber-700',
+  booster: 'bg-zinc-100 text-zinc-600',
+  expert: 'bg-yellow-100 text-yellow-700',
+  elite: 'bg-violet-100 text-violet-700',
 };
 const connectBadge: Record<string, { label: string; cls: string }> = {
   active: { label: 'Connect actif', cls: 'bg-emerald-100 text-emerald-700' },
@@ -207,7 +207,7 @@ export default function AdminAmbassadeursPage() {
                     }`}>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</span>
                     <div>
                       <span className="text-sm text-zinc-700">{e.name}</span>
-                      <span className={`ml-2 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${tierBadge[e.tier] || tierBadge.bronze}`}>
+                      <span className={`ml-2 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${tierBadge[e.tier] || tierBadge.starter}`}>
                         {e.tierName}
                       </span>
                     </div>
@@ -277,7 +277,7 @@ export default function AdminAmbassadeursPage() {
                 onClick={() => setExpanded(p => ({ ...p, [amb.id]: !p[amb.id] }))}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${tierBadge[amb.tier] || tierBadge.bronze}`}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${tierBadge[amb.tier] || tierBadge.starter}`}>
                     <TierIcon className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">

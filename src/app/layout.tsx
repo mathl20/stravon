@@ -8,11 +8,11 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://stravon.fr';
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: 'Stravon — Logiciel de gestion pour artisans du batiment',
+    default: 'Stravon — Logiciel de gestion pour artisans du bâtiment',
     template: '%s — Stravon',
   },
-  description: 'Gerez vos devis, factures, planning, equipes et chantiers dans un seul outil. Assistant IA integre. Essai gratuit 14 jours.',
-  keywords: ['logiciel artisan', 'gestion batiment', 'devis facture artisan', 'planning chantier', 'logiciel BTP', 'gestion entreprise batiment', 'facturation artisan', 'stravon'],
+  description: 'Stravon est le logiciel tout-en-un pour les artisans du bâtiment. Gérez vos devis, factures, planning, équipes et chantiers. Assistant IA intégré. Essai gratuit 14 jours sans carte bancaire.',
+  keywords: ['stravon', 'logiciel artisan', 'gestion bâtiment', 'devis facture artisan', 'planning chantier', 'logiciel BTP', 'gestion entreprise batiment', 'facturation artisan', 'logiciel devis artisan'],
   authors: [{ name: 'Stravon' }],
   creator: 'Stravon',
   publisher: 'Stravon',
@@ -32,24 +32,22 @@ export const metadata: Metadata = {
     locale: 'fr_FR',
     url: BASE_URL,
     siteName: 'Stravon',
-    title: 'Stravon — Logiciel de gestion pour artisans du batiment',
-    description: 'Gerez vos devis, factures, planning, equipes et chantiers dans un seul outil. Assistant IA integre. Essai gratuit 14 jours.',
+    title: 'Stravon — Le logiciel tout-en-un pour artisans du bâtiment',
+    description: 'Devis en 2 min, factures en 1 clic, planning d\'équipe, relances auto et assistant IA. 14 jours gratuits sans carte bancaire.',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Stravon — Logiciel artisans du bâtiment' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Stravon — Logiciel de gestion pour artisans du batiment',
-    description: 'Gerez vos devis, factures, planning, equipes et chantiers dans un seul outil. Assistant IA integre. Essai gratuit 14 jours.',
+    title: 'Stravon — Logiciel de gestion pour artisans du bâtiment',
+    description: 'Devis, factures, planning, équipe et IA. Essai gratuit 14 jours.',
+    images: ['/opengraph-image'],
   },
-  icons: {
-    icon: [
-      { url: '/favicon.jpg', type: 'image/jpeg' },
-    ],
-    apple: [
-      { url: '/favicon.jpg' },
-    ],
-  },
+  manifest: '/site.webmanifest',
   alternates: {
     canonical: BASE_URL,
+  },
+  other: {
+    'theme-color': '#6C63FF',
   },
 };
 
