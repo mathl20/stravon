@@ -7,6 +7,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://stravon.fr';
 export const metadata: Metadata = {
   title: 'Conditions Generales de Vente',
   alternates: { canonical: `${BASE_URL}/cgv` },
+  robots: { index: false, follow: true },
 };
 
 export default function CGVPage() {
