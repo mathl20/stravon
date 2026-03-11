@@ -222,7 +222,7 @@ export default function AmbassadeurDashboardContent() {
 
       {/* Affiliate link */}
       <div className="bg-white border border-zinc-200 rounded-2xl p-5">
-        <h2 className="text-sm font-semibold text-zinc-900 mb-3">Votre lien de parrainage</h2>
+        <h2 className="text-sm font-semibold text-zinc-900 mb-3">Votre lien d&apos;affiliation</h2>
         <div className="flex items-center gap-2">
           <div className="flex-1 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-sm text-zinc-700 font-mono truncate">
             {affiliateLink}
@@ -304,7 +304,7 @@ export default function AmbassadeurDashboardContent() {
                 ))}
               </div>
             ) : (
-              <div className="px-5 py-8 text-center text-sm text-zinc-400">Aucun parrainage ce mois-ci parmi les ambassadeurs éligibles</div>
+              <div className="px-5 py-8 text-center text-sm text-zinc-400">Aucune affiliation ce mois-ci parmi les ambassadeurs éligibles</div>
             )}
           </>
         ) : (
@@ -346,7 +346,7 @@ export default function AmbassadeurDashboardContent() {
                   <span className="text-base">{r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : '🥉'}</span>
                   <div>
                     <p className="text-sm font-medium text-zinc-700">{MONTH_NAMES[r.month]} {r.year}</p>
-                    <p className="text-xs text-zinc-400">{r.referralsCount} artisan{r.referralsCount > 1 ? 's' : ''} parrainé{r.referralsCount > 1 ? 's' : ''}</p>
+                    <p className="text-xs text-zinc-400">{r.referralsCount} artisan{r.referralsCount > 1 ? 's' : ''} affilié{r.referralsCount > 1 ? 's' : ''}</p>
                   </div>
                 </div>
                 <span className="text-sm font-bold text-emerald-600">+{formatCurrency(r.amount)}</span>
@@ -378,7 +378,7 @@ export default function AmbassadeurDashboardContent() {
               ))}
             </div>
           ) : (
-            <div className="px-5 py-8 text-center text-sm text-zinc-400">Aucun artisan parrainé</div>
+            <div className="px-5 py-8 text-center text-sm text-zinc-400">Aucun artisan affilié</div>
           )}
         </div>
 
@@ -392,7 +392,7 @@ export default function AmbassadeurDashboardContent() {
               <span className="text-lg">🥇</span>
               <div>
                 <p className="text-sm font-semibold text-zinc-700">1er — 100€ de bonus</p>
-                <p className="text-xs text-zinc-400">Le plus d'artisans parrainés dans le mois</p>
+                <p className="text-xs text-zinc-400">Le plus d&apos;artisans affiliés dans le mois</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
