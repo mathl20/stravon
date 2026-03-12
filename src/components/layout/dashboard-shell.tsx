@@ -72,7 +72,7 @@ export function DashboardShell({ children, user, company, isDemo = false, subscr
   return (
     <PermissionsProvider value={user.permissions}>
     <PlanProvider value={currentPlan}>
-      <div className="min-h-screen bg-zinc-50/60">
+      <div className="min-h-screen" style={{ backgroundColor: '#09090f' }}>
         {/* Demo banner */}
         {isDemo && (
           <div className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-violet-600 to-brand-600 text-white">
@@ -184,13 +184,13 @@ export function DashboardShell({ children, user, company, isDemo = false, subscr
             {/* Block access if no subscription (except subscription page, demo, and admin) */}
             {!isDemo && !isAdminUser && subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing' && pathname !== '/subscription' ? (
               <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center mb-4">
-                  <AlertTriangle className="w-7 h-7 text-amber-600" />
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'rgba(251,191,36,0.12)' }}>
+                  <AlertTriangle className="w-7 h-7 text-amber-400" />
                 </div>
-                <h2 className="text-xl font-bold text-zinc-900 mb-2">Abonnement requis</h2>
+                <h2 className="text-xl font-bold mb-2" style={{ color: '#eae9f0' }}>Abonnement requis</h2>
                 {user.role === 'PATRON' ? (
                   <>
-                    <p className="text-sm text-zinc-500 mb-6 max-w-md">
+                    <p className="text-sm mb-6 max-w-md" style={{ color: '#9d9bab' }}>
                       {trialEndsAt && trialDaysLeft <= 0
                         ? 'Votre essai gratuit est termine. Souscrivez a un abonnement pour continuer a utiliser STRAVON.'
                         : 'Pour acceder a STRAVON, vous devez souscrire a un abonnement.'}
@@ -203,7 +203,7 @@ export function DashboardShell({ children, user, company, isDemo = false, subscr
                     </Link>
                   </>
                 ) : (
-                  <p className="text-sm text-zinc-500 max-w-md">
+                  <p className="text-sm max-w-md" style={{ color: '#9d9bab' }}>
                     Votre entreprise n&apos;a pas d&apos;abonnement actif. Contactez le responsable de votre entreprise pour activer l&apos;acces.
                   </p>
                 )}
