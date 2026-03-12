@@ -183,7 +183,7 @@ export default function DashboardPage() {
             <p className="text-base font-bold text-white">
               {greeting}{stats.userFirstName ? `, ${stats.userFirstName}` : ''} 👋
             </p>
-            <p className="text-[11px] capitalize" style={{ color: '#5f5d6e' }}>{dateStr}</p>
+            <p className="text-[11px] capitalize" style={{ color: '#9d9bab' }}>{dateStr}</p>
           </div>
 
           {/* 4 Stat cards 2×2 — patron */}
@@ -194,7 +194,7 @@ export default function DashboardPage() {
                 <p className="font-bold mt-1 tabular-nums" style={{ color: '#6C63FF', fontSize: '22px' }}>{formatCurrency(stats.monthlyRevenue)}</p>
                 {(() => {
                   const prev = stats.previousMonthRevenue ?? 0;
-                  if (prev === 0) return <p style={{ color: '#5f5d6e', fontSize: '9px' }}>Ce mois-ci</p>;
+                  if (prev === 0) return <p style={{ color: '#9d9bab', fontSize: '9px' }}>Ce mois-ci</p>;
                   const pct = Math.round(((stats.monthlyRevenue - prev) / prev) * 100);
                   return <p style={{ color: pct >= 0 ? '#4ade80' : '#f87171', fontSize: '9px' }}>{pct >= 0 ? `↗ +${pct}%` : `↘ ${pct}%`} vs mois dernier</p>;
                 })()}
@@ -237,30 +237,30 @@ export default function DashboardPage() {
           {stats.activiteRecente && stats.activiteRecente.length > 0 && (
             <div className="px-5 pb-5">
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '16px' }}>
-                <p className="font-medium uppercase mb-3" style={{ color: '#5f5d6e', fontSize: '10px', letterSpacing: '0.06em' }}>ACTIVITÉ RÉCENTE</p>
+                <p className="font-medium uppercase mb-3" style={{ color: '#9d9bab', fontSize: '10px', letterSpacing: '0.06em' }}>ACTIVITÉ RÉCENTE</p>
                 <div>
                   {stats.activiteRecente.map((item, i) => {
                     const isLastItem = i === (stats.activiteRecente?.length ?? 1) - 1;
                     const iconConfig: Record<string, { bg: string; emoji: string }> = {
-                      facture: { bg: 'rgba(74,222,128,0.12)', emoji: '📄' },
-                      devis: { bg: 'rgba(96,165,250,0.12)', emoji: '📋' },
-                      intervention: { bg: 'rgba(108,99,255,0.12)', emoji: '🔧' },
+                      facture: { bg: 'rgba(74,222,128,0.20)', emoji: '📄' },
+                      devis: { bg: 'rgba(96,165,250,0.20)', emoji: '📋' },
+                      intervention: { bg: 'rgba(108,99,255,0.20)', emoji: '🔧' },
                     };
                     const cfg = iconConfig[item.type] || { bg: 'rgba(255,255,255,0.08)', emoji: '📌' };
                     const getBadge = (): { label: string; color: string; bg: string } => {
                       if (item.type === 'facture') {
-                        if (item.status === 'PAYEE' || item.status === 'PAID') return { label: 'Payée', color: '#4ade80', bg: 'rgba(74,222,128,0.12)' };
-                        if (item.status === 'EN_RETARD') return { label: 'En retard', color: '#f87171', bg: 'rgba(248,113,113,0.12)' };
-                        return { label: 'En attente', color: '#fbbf24', bg: 'rgba(251,191,36,0.12)' };
+                        if (item.status === 'PAYEE' || item.status === 'PAID') return { label: 'Payée', color: '#4ade80', bg: 'rgba(74,222,128,0.15)' };
+                        if (item.status === 'EN_RETARD') return { label: 'En retard', color: '#f87171', bg: 'rgba(248,113,113,0.15)' };
+                        return { label: 'En attente', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' };
                       }
                       if (item.type === 'devis') {
-                        if (item.status === 'ACCEPTE') return { label: 'Accepté', color: '#4ade80', bg: 'rgba(74,222,128,0.12)' };
-                        if (item.status === 'REFUSE') return { label: 'Refusé', color: '#f87171', bg: 'rgba(248,113,113,0.12)' };
-                        return { label: 'Envoyé', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' };
+                        if (item.status === 'ACCEPTE') return { label: 'Accepté', color: '#4ade80', bg: 'rgba(74,222,128,0.15)' };
+                        if (item.status === 'REFUSE') return { label: 'Refusé', color: '#f87171', bg: 'rgba(248,113,113,0.15)' };
+                        return { label: 'Envoyé', color: '#60a5fa', bg: 'rgba(96,165,250,0.15)' };
                       }
-                      if (item.status === 'PAID') return { label: 'Payée', color: '#4ade80', bg: 'rgba(74,222,128,0.12)' };
-                      if (item.status === 'PENDING') return { label: 'En attente', color: '#fbbf24', bg: 'rgba(251,191,36,0.12)' };
-                      return { label: item.status, color: '#9d9bab', bg: 'rgba(255,255,255,0.06)' };
+                      if (item.status === 'PAID') return { label: 'Payée', color: '#4ade80', bg: 'rgba(74,222,128,0.15)' };
+                      if (item.status === 'PENDING') return { label: 'En attente', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' };
+                      return { label: item.status, color: '#9d9bab', bg: 'rgba(255,255,255,0.08)' };
                     };
                     const badge = getBadge();
                     const href = item.type === 'facture' ? `/factures/${item.id}` : item.type === 'devis' ? `/devis/${item.id}` : `/interventions/${item.id}`;
@@ -268,17 +268,19 @@ export default function DashboardPage() {
                       <Link
                         key={`${item.type}-${item.id}`}
                         href={href}
-                        className="flex items-center gap-3 py-2.5 group"
-                        style={!isLastItem ? { borderBottom: '1px solid rgba(255,255,255,0.04)' } : undefined}
+                        className="flex items-center gap-3 py-2.5 rounded-lg transition-colors"
+                        style={!isLastItem ? { borderBottom: '1px solid rgba(255,255,255,0.05)', paddingLeft: '6px', paddingRight: '6px', marginLeft: '-6px', marginRight: '-6px' } : { paddingLeft: '6px', paddingRight: '6px', marginLeft: '-6px', marginRight: '-6px' }}
+                        onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)')}
+                        onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}
                       >
-                        <div className="flex-shrink-0 flex items-center justify-center text-base" style={{ width: '32px', height: '32px', borderRadius: '8px', background: cfg.bg }}>
+                        <div className="flex-shrink-0 flex items-center justify-center text-base" style={{ width: '36px', height: '36px', borderRadius: '10px', background: cfg.bg }}>
                           {cfg.emoji}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-bold text-white truncate" style={{ fontSize: '11px' }}>{item.title}</p>
-                          <p className="truncate" style={{ color: '#5f5d6e', fontSize: '10px' }}>{item.description}</p>
+                          <p className="font-semibold text-white truncate" style={{ fontSize: '13px' }}>{item.title}</p>
+                          <p className="truncate" style={{ color: '#9d9bab', fontSize: '11px' }}>{item.description}</p>
                         </div>
-                        <div className="flex-shrink-0 px-2 py-0.5 rounded-full font-medium" style={{ fontSize: '10px', background: badge.bg, color: badge.color }}>
+                        <div className="flex-shrink-0 px-2.5 py-1 rounded-full font-semibold" style={{ fontSize: '11px', background: badge.bg, color: badge.color }}>
                           {badge.label}
                         </div>
                       </Link>
