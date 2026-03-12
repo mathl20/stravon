@@ -66,6 +66,16 @@ export type FactureWithRelations = Facture & {
   intervention?: Pick<Intervention, 'id' | 'reference' | 'title'> | null;
 };
 
+export interface ActivityItem {
+  type: 'facture' | 'devis' | 'intervention';
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  amount?: number;
+  date: string;
+}
+
 export interface DashboardStats {
   monthlyRevenue: number;
   yearlyRevenue: number;
@@ -75,6 +85,13 @@ export interface DashboardStats {
   recentInterventions: InterventionWithRelations[];
   monthlyData: { month: string; revenue: number }[];
   userRole: string;
+  userFirstName?: string;
+  previousMonthRevenue?: number;
+  interventionsCetteSemaine?: number;
+  facturesEnAttenteCount?: number;
+  devisEnCours?: number;
+  devisARelancer?: number;
+  activiteRecente?: ActivityItem[];
 }
 
 export type FeuilleHeureWithRelations = FeuilleHeure & {

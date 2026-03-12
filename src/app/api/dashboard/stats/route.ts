@@ -216,6 +216,41 @@ export async function GET(request: NextRequest) {
     }
 
     const monthlyRevenue = monthlyData.length > 0 ? monthlyData[monthlyData.length - 1].revenue : 0;
+    const previousMonthRevenue = !isEmploye && monthlyData.length >= 2 ? monthlyData[monthlyData.length - 2].revenue : 0;
+
+    // ── Mobile dashboard: extra stats ──
+    const startOfWeek = new Date(now);
+    const dow = startOfWeek.getDay();
+    startOfWeek.setDate(startOfWeek.getDate() - (dow === 0 ? 6 : dow - 1));
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    let interventionsCetteSemaine = 0;
+    let facturesEnAttenteCount = 0;
+    let devisEnCours = 0;
+    let devisARelancer = 0;
+    let activiteRecente: any[] = [];
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    if (!isEmploye) {
+      [interventionsCetteSemaine, facturesEnAttenteCount, devisEnCours, devisARelancer] = await Promise.all([
+        prisma.intervention.count({ where: { companyId: user.companyId, date: { gte: startOfWeek } } as any }),
+        prisma.facture.count({ where: { companyId: user.companyId, status: 'EN_ATTENTE' } as any }),
+        prisma.devis.count({ where: { companyId: user.companyId, status: 'ENVOYE' } as any }),
+        prisma.devis.count({ where: { companyId: user.companyId, status: 'ENVOYE', createdAt: { lt: sevenDaysAgo } } as any }),
+      ]);
+      const [lastFactures, lastDevis, lastIntvs] = await Promise.all([
+        prisma.facture.findMany({ where: { companyId: user.companyId } as any, include: { client: true }, orderBy: { createdAt: 'desc' }, take: 3 }),
+        prisma.devis.findMany({ where: { companyId: user.companyId } as any, include: { client: true }, orderBy: { createdAt: 'desc' }, take: 3 }),
+        prisma.intervention.findMany({ where: { companyId: user.companyId } as any, include: { client: true }, orderBy: { date: 'desc' }, take: 3 }),
+      ]);
+      activiteRecente = [
+        ...lastFactures.map((f: any) => ({ type: 'facture', id: f.id, title: `Facture #${f.numero || f.id.slice(-6)}`, description: f.client ? `${f.client.firstName} ${f.client.lastName}` : '', status: f.status, amount: f.amountTTC, date: f.createdAt })),
+        ...lastDevis.map((d: any) => ({ type: 'devis', id: d.id, title: `Devis #${d.reference || d.id.slice(-6)}`, description: d.client ? `${d.client.firstName} ${d.client.lastName}${d.title ? ` — ${d.title}` : ''}` : '', status: d.status, amount: d.amountTTC, date: d.createdAt })),
+        ...lastIntvs.map((i: any) => ({ type: 'intervention', id: i.id, title: i.title, description: i.client ? `${i.client.firstName} ${i.client.lastName}` : '', status: i.status, amount: i.amountTTC, date: i.date })),
+      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+    } else {
+      interventionsCetteSemaine = await prisma.intervention.count({ where: { ...cf, date: { gte: startOfWeek } } as any });
+    }
 
     const res = NextResponse.json({
       data: {
@@ -228,6 +263,13 @@ export async function GET(request: NextRequest) {
         monthlyData: isEmploye ? [] : monthlyData,
         userRole: user.role,
         permissions: perms,
+        userFirstName: user.firstName,
+        previousMonthRevenue,
+        interventionsCetteSemaine,
+        facturesEnAttenteCount: isEmploye ? 0 : facturesEnAttenteCount,
+        devisEnCours: isEmploye ? 0 : devisEnCours,
+        devisARelancer: isEmploye ? 0 : devisARelancer,
+        activiteRecente: isEmploye ? [] : activiteRecente,
       },
     });
     res.headers.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60');
