@@ -189,7 +189,7 @@ export default function DashboardPage() {
           {/* 4 Stat cards 2×2 — patron */}
           {canSeeRevenue && (
             <div className="grid grid-cols-2 gap-2.5 px-5 pb-4">
-              <div className="p-3 animate-fade-up" style={{ background: '#1a1a24', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)', animationDelay: '0ms' }}>
+              <div className="p-3 animate-fade-up" style={{ background: '#1a1a24', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', animationDelay: '0ms' }}>
                 <p className="font-medium uppercase" style={{ color: '#5f5d6e', fontSize: '9px', letterSpacing: '0.06em' }}>CA DU MOIS</p>
                 <p className="font-bold mt-1 tabular-nums" style={{ color: '#6C63FF', fontSize: '22px' }}>{formatCurrency(stats.monthlyRevenue)}</p>
                 {(() => {
@@ -199,17 +199,17 @@ export default function DashboardPage() {
                   return <p style={{ color: pct >= 0 ? '#4ade80' : '#f87171', fontSize: '9px' }}>{pct >= 0 ? `↗ +${pct}%` : `↘ ${pct}%`} vs mois dernier</p>;
                 })()}
               </div>
-              <div className="p-3 animate-fade-up" style={{ background: '#1a1a24', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)', animationDelay: '100ms' }}>
+              <div className="p-3 animate-fade-up" style={{ background: '#1a1a24', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', animationDelay: '100ms' }}>
                 <p className="font-medium uppercase" style={{ color: '#5f5d6e', fontSize: '9px', letterSpacing: '0.06em' }}>EN ATTENTE</p>
                 <p className="font-bold mt-1 tabular-nums" style={{ color: '#4ade80', fontSize: '22px' }}>{formatCurrency(stats.pendingRevenue)}</p>
                 <p style={{ color: '#4ade80', fontSize: '9px' }}>{stats.facturesEnAttenteCount ?? 0} facture{(stats.facturesEnAttenteCount ?? 0) !== 1 ? 's' : ''}</p>
               </div>
-              <div className="p-3 animate-fade-up" style={{ background: '#1a1a24', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)', animationDelay: '200ms' }}>
+              <div className="p-3 animate-fade-up" style={{ background: '#1a1a24', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', animationDelay: '200ms' }}>
                 <p className="font-medium uppercase" style={{ color: '#5f5d6e', fontSize: '9px', letterSpacing: '0.06em' }}>INTERVENTIONS</p>
                 <p className="font-bold mt-1 tabular-nums text-white" style={{ fontSize: '22px' }}>{stats.interventionsCetteSemaine ?? 0}</p>
                 <p style={{ color: '#60a5fa', fontSize: '9px' }}>cette semaine</p>
               </div>
-              <div className="p-3 animate-fade-up" style={{ background: '#1a1a24', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)', animationDelay: '300ms' }}>
+              <div className="p-3 animate-fade-up" style={{ background: '#1a1a24', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', animationDelay: '300ms' }}>
                 <p className="font-medium uppercase" style={{ color: '#5f5d6e', fontSize: '9px', letterSpacing: '0.06em' }}>DEVIS EN COURS</p>
                 <p className="font-bold mt-1 tabular-nums text-white" style={{ fontSize: '22px' }}>{stats.devisEnCours ?? 0}</p>
                 <p style={{ color: '#fbbf24', fontSize: '9px' }}>{stats.devisARelancer ?? 0} à relancer</p>
@@ -220,12 +220,12 @@ export default function DashboardPage() {
           {/* Simplified stats for employees */}
           {!canSeeRevenue && (
             <div className="grid grid-cols-2 gap-2.5 px-5 pb-4">
-              <div className="p-3" style={{ background: '#1a1a24', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
+              <div className="p-3" style={{ background: '#1a1a24', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <p className="font-medium uppercase" style={{ color: '#5f5d6e', fontSize: '9px', letterSpacing: '0.06em' }}>MES INTERVENTIONS</p>
                 <p className="font-bold mt-1 text-white" style={{ fontSize: '22px' }}>{stats.totalInterventions}</p>
                 <p style={{ color: '#5f5d6e', fontSize: '9px' }}>Total</p>
               </div>
-              <div className="p-3" style={{ background: '#1a1a24', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
+              <div className="p-3" style={{ background: '#1a1a24', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <p className="font-medium uppercase" style={{ color: '#5f5d6e', fontSize: '9px', letterSpacing: '0.06em' }}>CETTE SEMAINE</p>
                 <p className="font-bold mt-1 text-white" style={{ fontSize: '22px' }}>{stats.interventionsCetteSemaine ?? 0}</p>
                 <p style={{ color: '#60a5fa', fontSize: '9px' }}>interventions</p>

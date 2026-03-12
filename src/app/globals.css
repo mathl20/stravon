@@ -139,7 +139,7 @@
 /* These apply after Tailwind's generated styles, overriding light-theme colors */
 
 /* Backgrounds */
-.bg-white { background-color: #111119; }
+.bg-white { background-color: #16161f; }
 .bg-zinc-50 { background-color: #16161f; }
 .bg-zinc-100 { background-color: #1a1a24; }
 .bg-zinc-200 { background-color: #232330; }
@@ -161,9 +161,10 @@
 .bg-brand-50 { background-color: rgba(108, 99, 255, 0.08); }
 
 /* Hover backgrounds */
-.hover\:bg-white:hover { background-color: #16161f; }
-.hover\:bg-zinc-50:hover { background-color: #16161f; }
-.hover\:bg-zinc-100:hover { background-color: #1a1a24; }
+.hover\:bg-white:hover { background-color: #1a1a24; }
+.hover\:bg-zinc-50:hover { background-color: #1a1a24; }
+.hover\:bg-zinc-50\/60:hover { background-color: rgba(255, 255, 255, 0.04); }
+.hover\:bg-zinc-100:hover { background-color: #232330; }
 .hover\:bg-red-100:hover { background-color: rgba(248, 113, 113, 0.15); }
 .hover\:bg-red-200:hover { background-color: rgba(248, 113, 113, 0.20); }
 .hover\:bg-amber-100:hover { background-color: rgba(251, 191, 36, 0.15); }
@@ -194,21 +195,22 @@
 .text-emerald-900 { color: #4ade80; }
 
 /* Borders */
-.border-zinc-100 { border-color: rgba(255, 255, 255, 0.06); }
-.border-zinc-200 { border-color: rgba(255, 255, 255, 0.08); }
-.border-zinc-300 { border-color: rgba(255, 255, 255, 0.12); }
-.border-gray-100 { border-color: rgba(255, 255, 255, 0.06); }
-.border-gray-200 { border-color: rgba(255, 255, 255, 0.08); }
+.border-zinc-50 { border-color: rgba(255, 255, 255, 0.07); }
+.border-zinc-100 { border-color: rgba(255, 255, 255, 0.08); }
+.border-zinc-200 { border-color: rgba(255, 255, 255, 0.10); }
+.border-zinc-300 { border-color: rgba(255, 255, 255, 0.14); }
+.border-gray-100 { border-color: rgba(255, 255, 255, 0.08); }
+.border-gray-200 { border-color: rgba(255, 255, 255, 0.10); }
 .border-red-100 { border-color: rgba(248, 113, 113, 0.15); }
 .border-red-200 { border-color: rgba(248, 113, 113, 0.20); }
 .border-amber-200 { border-color: rgba(251, 191, 36, 0.20); }
 .border-emerald-200 { border-color: rgba(74, 222, 128, 0.20); }
 
 /* Divide */
-.divide-zinc-100 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.06); }
-.divide-zinc-200 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.08); }
-.divide-gray-100 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.06); }
-.divide-gray-200 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.08); }
+.divide-zinc-100 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.07); }
+.divide-zinc-200 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.10); }
+.divide-gray-100 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.07); }
+.divide-gray-200 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.10); }
 
 /* Ring */
 .ring-zinc-200 { --tw-ring-color: rgba(255, 255, 255, 0.10); }
