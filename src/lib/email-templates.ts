@@ -127,6 +127,141 @@ export function ambassadorRankUpTemplate(firstName: string, newRank: number, mon
   };
 }
 
+// ── Onboarding email templates ──────────────────────────────
+
+function onboardingCta(text: string, href: string): string {
+  return `<a href="${href}" style="display:inline-block;padding:14px 32px;background:#6C63FF;color:#ffffff;text-decoration:none;border-radius:12px;font-weight:600;font-size:15px;">${text}</a>`;
+}
+
+export function onboardingJ0Template(firstName: string): { subject: string; html: string } {
+  return {
+    subject: `Bienvenue ${firstName} ! Crée ton premier devis en 2 min`,
+    html: baseTemplate(`
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#18181b;">Bienvenue sur Stravon, ${firstName} !</h1>
+      <p style="margin:0 0 20px;font-size:15px;color:#52525b;line-height:1.6;">
+        Tu viens de faire le meilleur choix pour ta gestion. Ton essai gratuit de 14 jours commence maintenant.
+      </p>
+      <p style="margin:0 0 24px;font-size:15px;color:#52525b;line-height:1.6;">
+        <strong>Prochaine étape :</strong> crée ton premier devis. On a même préparé un exemple pour que tu voies le résultat immédiatement.
+      </p>
+      ${onboardingCta('Créer mon premier devis →', `${APP_URL}/devis/new`)}
+      <p style="margin:24px 0 0;font-size:13px;color:#a1a1aa;">
+        Tu peux aussi répondre à cet email si tu as une question. On est là.
+      </p>
+    `),
+  };
+}
+
+export function onboardingJ1DevisTemplate(firstName: string): { subject: string; html: string } {
+  return {
+    subject: `${firstName}, bravo pour ton premier devis ! Prochaine étape →`,
+    html: baseTemplate(`
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#18181b;">Bien joué ${firstName} !</h1>
+      <p style="margin:0 0 20px;font-size:15px;color:#52525b;line-height:1.6;">
+        Tu as créé ton premier devis. Tu as vu comme c'est rapide ?
+      </p>
+      <p style="margin:0 0 24px;font-size:15px;color:#52525b;line-height:1.6;">
+        <strong>Prochaine étape :</strong> transforme un devis accepté en facture. Un seul clic et c'est fait.
+      </p>
+      ${onboardingCta('Voir mes devis →', `${APP_URL}/devis`)}
+    `),
+  };
+}
+
+export function onboardingJ1NoDevisTemplate(firstName: string): { subject: string; html: string } {
+  return {
+    subject: `${firstName}, ton premier devis t'attend`,
+    html: baseTemplate(`
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#18181b;">Tu n'as pas encore essayé ?</h1>
+      <p style="margin:0 0 20px;font-size:15px;color:#52525b;line-height:1.6;">
+        ${firstName}, créer un devis sur Stravon prend 2 minutes. Pas 30 min comme sur Excel.
+      </p>
+      <p style="margin:0 0 24px;font-size:15px;color:#52525b;line-height:1.6;">
+        Essaie maintenant — on a même un exemple pré-rempli pour voir le résultat tout de suite.
+      </p>
+      ${onboardingCta('Essayer maintenant →', `${APP_URL}/dashboard`)}
+    `),
+  };
+}
+
+export function onboardingJ3Template(firstName: string): { subject: string; html: string } {
+  return {
+    subject: `Astuce : fais signer tes devis par QR Code`,
+    html: baseTemplate(`
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#18181b;">Le savais-tu, ${firstName} ?</h1>
+      <p style="margin:0 0 20px;font-size:15px;color:#52525b;line-height:1.6;">
+        Sur le chantier, ton client peut scanner un QR code, voir le récap de l'intervention et signer directement sur son téléphone.
+      </p>
+      <p style="margin:0 0 24px;font-size:15px;color:#52525b;line-height:1.6;">
+        Fini les bons de travaux perdus et les allers-retours au bureau.
+      </p>
+      ${onboardingCta('Découvrir la signature QR →', `${APP_URL}/interventions`)}
+    `),
+  };
+}
+
+export function onboardingJ7Template(firstName: string, daysLeft: number, devisCount: number): { subject: string; html: string } {
+  return {
+    subject: `Mi-parcours : il te reste ${daysLeft} jours d'essai`,
+    html: baseTemplate(`
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#18181b;">Mi-parcours, ${firstName} !</h1>
+      <p style="margin:0 0 20px;font-size:15px;color:#52525b;line-height:1.6;">
+        Tu as créé <strong>${devisCount} devis</strong> depuis ton inscription. ${devisCount > 0 ? 'Bien joué !' : 'C\'est le moment de te lancer !'}
+      </p>
+      <p style="margin:0 0 8px;font-size:15px;color:#52525b;line-height:1.6;">
+        <strong>Ce que tu peux encore découvrir :</strong>
+      </p>
+      <ul style="margin:0 0 24px;padding-left:20px;font-size:14px;color:#52525b;line-height:2;">
+        <li>Les relances automatiques de factures</li>
+        <li>Le planning d'équipe</li>
+        <li>Les feuilles d'heures</li>
+        <li>L'assistant IA</li>
+      </ul>
+      ${onboardingCta('Explorer Stravon →', `${APP_URL}/dashboard`)}
+    `),
+  };
+}
+
+export function onboardingJ11Template(firstName: string): { subject: string; html: string } {
+  return {
+    subject: `Plus que 3 jours d'essai, ${firstName}`,
+    html: baseTemplate(`
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#18181b;">Plus que 3 jours, ${firstName}</h1>
+      <p style="margin:0 0 20px;font-size:15px;color:#52525b;line-height:1.6;">
+        Ton essai gratuit se termine bientôt. Voilà pourquoi les artisans restent sur Stravon :
+      </p>
+      <ul style="margin:0 0 24px;padding-left:20px;font-size:14px;color:#52525b;line-height:2;">
+        <li><strong>10h gagnées</strong> par semaine sur l'admin</li>
+        <li><strong>0 facture oubliée</strong> grâce aux relances auto</li>
+        <li><strong>Tout centralisé</strong> : devis, factures, planning, équipe</li>
+      </ul>
+      <p style="margin:0 0 24px;font-size:15px;color:#52525b;line-height:1.6;">
+        À partir de 19€/mois. Moins cher qu'un repas au resto.
+      </p>
+      ${onboardingCta('Voir les offres →', `${APP_URL}/subscription`)}
+    `),
+  };
+}
+
+export function onboardingJ13Template(firstName: string): { subject: string; html: string } {
+  return {
+    subject: `Dernier jour d'essai — ne perds pas tes données`,
+    html: baseTemplate(`
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#18181b;">C'est ton dernier jour, ${firstName}</h1>
+      <p style="margin:0 0 20px;font-size:15px;color:#52525b;line-height:1.6;">
+        Ton essai gratuit se termine demain. Tes devis, factures et données client sont en sécurité, mais tu n'y auras plus accès sans abonnement.
+      </p>
+      <p style="margin:0 0 24px;font-size:15px;color:#52525b;line-height:1.6;">
+        Passe en Starter (19€/mois) pour garder tout ça et continuer à gagner du temps.
+      </p>
+      ${onboardingCta('Passer en Starter →', `${APP_URL}/subscription`)}
+      <p style="margin:24px 0 0;font-size:13px;color:#a1a1aa;">
+        Une question ? Réponds à cet email, on te répond en moins de 24h.
+      </p>
+    `),
+  };
+}
+
 export function resetPasswordTemplate(token: string, firstName: string): { subject: string; html: string } {
   const link = `${APP_URL}/reset-password?token=${token}`;
   return {

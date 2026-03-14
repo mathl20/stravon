@@ -43,6 +43,9 @@ import { apiFetch, formatCurrency, formatDate } from '@/lib/utils';
 import { canManageClients, canViewGlobalRevenue, canViewProfitability, hasPermission, PERMISSIONS } from '@/lib/permissions';
 import { usePermissions } from '@/lib/permissions-context';
 import type { DashboardStats } from '@/types';
+import { OnboardingWizard } from '@/components/onboarding/onboarding-wizard';
+import { OnboardingChecklist } from '@/components/onboarding/onboarding-checklist';
+import { TrialSummaryPopup } from '@/components/onboarding/trial-summary-popup';
 
 const STATUS_DOT: Record<string, string> = {
   PENDING: 'bg-amber-400',
@@ -89,6 +92,8 @@ export default function DashboardPage() {
   const [copied, setCopied] = useState(false);
   const [analytics, setAnalytics] = useState<any>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [onboarding, setOnboarding] = useState<{ step: number; completed: boolean; checklist: any; trialEndsAt: string | null; createdAt: string } | null>(null);
+  const [showWizard, setShowWizard] = useState(false);
 
   const canSeeRevenue = canViewGlobalRevenue(perms);
   const canSeeAdvanced = hasPermission(perms, PERMISSIONS.SETTINGS_MANAGE);
@@ -100,6 +105,17 @@ export default function DashboardPage() {
       .catch((e) => { console.error('Dashboard stats error:', e); setError(e.message || 'Erreur'); })
       .finally(() => setLoading(false));
   }, []);
+
+  // 1b. Load onboarding status
+  useEffect(() => {
+    if (!canSeeAdvanced) return;
+    apiFetch<any>('/api/onboarding/status')
+      .then((data) => {
+        setOnboarding(data);
+        if (!data.completed && data.step === 0) setShowWizard(true);
+      })
+      .catch(() => {});
+  }, [canSeeAdvanced]);
 
   // 2. Load advanced stats lazily after basic stats are ready
   useEffect(() => {
@@ -166,6 +182,22 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Onboarding wizard modal */}
+      {showWizard && onboarding && (
+        <OnboardingWizard
+          currentStep={onboarding.step}
+          onComplete={() => {
+            setShowWizard(false);
+            apiFetch<any>('/api/onboarding/status').then(setOnboarding).catch(() => {});
+          }}
+        />
+      )}
+
+      {/* Trial summary popup (J+10) */}
+      {onboarding?.trialEndsAt && onboarding?.createdAt && (
+        <TrialSummaryPopup trialEndsAt={onboarding.trialEndsAt} createdAt={onboarding.createdAt} />
+      )}
+
       {/* ── Mobile-first main dashboard card ── */}
       <div className="relative">
         {/* Violet glow behind card */}
@@ -302,6 +334,11 @@ export default function DashboardPage() {
           </Link>
         ))}
       </div>
+
+      {/* Onboarding checklist */}
+      {onboarding && !onboarding.completed && canSeeAdvanced && (
+        <OnboardingChecklist checklist={onboarding.checklist} completed={onboarding.completed} />
+      )}
 
       {/* Advanced stats — permissions-based, lazy loaded */}
       {canSeeAdvanced && (

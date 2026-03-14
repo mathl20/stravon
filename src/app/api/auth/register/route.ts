@@ -8,7 +8,7 @@ import { registerSchema } from '@/lib/validations';
 import { getDefaultPrestations } from '@/lib/prestations';
 import { generateReferralCode } from '@/lib/referral';
 import { sendEmail } from '@/lib/mailer';
-import { verifyEmailTemplate } from '@/lib/email-templates';
+import { verifyEmailTemplate, onboardingJ0Template } from '@/lib/email-templates';
 import { cookies } from 'next/headers';
 import { createToken, setAuthCookie, createRefreshToken, setRefreshCookie } from '@/lib/auth';
 
@@ -121,6 +121,15 @@ export async function POST(request: NextRequest) {
       await sendEmail({ to: email, subject: emailContent.subject, html: emailContent.html });
     } catch (emailErr) {
       console.error('[REGISTER] Failed to send verification email to', email, emailErr);
+    }
+
+    // Send onboarding welcome email (J+0)
+    try {
+      const welcomeEmail = onboardingJ0Template(firstName);
+      await sendEmail({ to: email, subject: welcomeEmail.subject, html: welcomeEmail.html, replyTo: 'contact@stravon.fr' });
+      await prisma.company.update({ where: { id: result.company.id }, data: { lastOnboardingEmail: 1 } });
+    } catch (err) {
+      console.error('[REGISTER] Failed to send welcome email:', err);
     }
 
     // Auto-login: create session so user can proceed to plan selection

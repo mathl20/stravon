@@ -56,6 +56,16 @@ model Company {
   conditionsGeneralesDevis String?
   delaiPaiementJours       Int     @default(30)
 
+  // Onboarding
+  onboardingCompleted    Boolean   @default(false)
+  onboardingStep         Int       @default(0)
+  onboardingCompanyInfo  Boolean   @default(false)
+  onboardingFirstDevis   Boolean   @default(false)
+  onboardingFirstFacture Boolean   @default(false)
+  onboardingRelances     Boolean   @default(false)
+  onboardingFirstClient  Boolean   @default(false)
+  lastOnboardingEmail    Int       @default(0)
+
   // Free trial
   trialEndsAt                DateTime?
 
