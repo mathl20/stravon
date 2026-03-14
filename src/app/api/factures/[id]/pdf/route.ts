@@ -88,7 +88,7 @@ ${company.formeJuridique ? '<br>' + company.formeJuridique + (company.capitalSoc
 ${company.rcs ? '<br>' + company.rcs : ''}${company.codeAPE ? ' — APE: ' + company.codeAPE : ''}</div></div>
 <div style="text-align:right"><div class="ref-label">Facture</div><div class="ref-value">${facture.numero}</div>
 <div class="meta" style="margin:4px 0 4px">Date: ${formatDate(facture.date)}</div>
-${facture.dateEcheance ? '<div class="meta">Echeance: ' + formatDate(facture.dateEcheance) + '</div>' : ''}
+${facture.dateEcheance ? '<div class="meta">&Eacute;ch&eacute;ance: ' + formatDate(facture.dateEcheance) + '</div>' : ''}
 <div style="margin-top:8px"><span class="status">${statusLabel}</span></div></div>
 </div>
 <div class="section"><div class="section-title">Client</div><div class="client-box">
@@ -98,23 +98,32 @@ ${facture.client.phone ? '<br>Tel: ' + facture.client.phone : ''}${facture.clien
 </div></div>
 ${facture.intervention ? '<div class="section"><div class="section-title">Intervention associee</div><div class="meta">Ref: ' + facture.intervention.reference + ' &mdash; ' + facture.intervention.title + '</div></div>' : ''}
 ${facture.devis ? '<div class="section"><div class="section-title">Devis d\'origine</div><div class="meta">Facture relative au devis n&deg; ' + facture.devis.reference + ' du ' + formatDate(facture.devis.date) + '</div></div>' : ''}
-<div class="section"><div class="section-title">Details</div><table><thead><tr><th>Description</th><th>Qte</th><th>Prix unit.</th><th>Total</th></tr></thead><tbody>
-${facture.items.map((it: any) => `<tr><td>${it.description}</td><td>${it.quantity}</td><td>${formatCurrency(it.unitPrice)}</td><td>${formatCurrency(it.total)}</td></tr>`).join('')}
+<div class="section"><div class="section-title">Details</div><table><thead><tr><th style="width:40px">Type</th><th>Description</th><th>Qte</th><th>Prix unit.</th><th>Total</th></tr></thead><tbody>
+${facture.items.map((it: any) => {
+  const typeLabels: Record<string, string> = { prestation: 'Prest.', fourniture: 'Fourn.' };
+  const typeColors: Record<string, string> = { prestation: '#0284c7', fourniture: '#d97706' };
+  const t = it.type || 'prestation';
+  return `<tr><td><span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:600;color:white;background:${typeColors[t] || brandColor}">${typeLabels[t] || 'Prest.'}</span></td><td>${it.description}</td><td>${it.quantity}</td><td>${formatCurrency(it.unitPrice)}</td><td>${formatCurrency(it.total)}</td></tr>`;
+}).join('')}
 </tbody></table>
 <div class="totals"><table><tr><td class="label">Total HT</td><td style="text-align:right;font-weight:500">${formatCurrency(facture.amountHT)}</td></tr>
-<tr><td class="label">TVA (${facture.tvaRate}%)</td><td style="text-align:right;font-weight:500">${formatCurrency(tva)}</td></tr>
-<tr class="grand"><td>Total TTC</td><td style="text-align:right">${formatCurrency(facture.amountTTC)}</td></tr></table></div></div>
+${company.regimeTVA === 'franchise' ? '<tr><td class="label" colspan="2" style="text-align:right;font-size:11px;color:#71717a;font-style:italic">TVA non applicable, art. 293 B du CGI</td></tr>' : '<tr><td class="label">TVA (' + facture.tvaRate + '%)</td><td style="text-align:right;font-weight:500">' + formatCurrency(tva) + '</td></tr>'}
+<tr class="grand"><td>Total TTC</td><td style="text-align:right">${formatCurrency(company.regimeTVA === 'franchise' ? facture.amountHT : facture.amountTTC)}</td></tr></table></div></div>
 ${facture.status === 'PAYEE' && facture.datePaiement ? '<div class="payment-box"><div class="payment-title">Paiement recu</div><div class="meta">Date: ' + formatDate(facture.datePaiement) + (facture.modePaiement ? '<br>Mode: ' + getModePaiementLabel(facture.modePaiement) : '') + '</div></div>' : ''}
 ${facture.conditionsPaiement ? '<div class="conditions"><div class="conditions-title">Conditions de reglement</div><div class="meta">' + facture.conditionsPaiement + '</div></div>' : ''}
 ${facture.notes ? '<div class="section" style="background:#fffbeb;border-left:3px solid #f59e0b;padding:12px 16px;border-radius:0 8px 8px 0"><div style="font-weight:600;font-size:12px;color:#92400e;margin-bottom:2px">Notes</div><div class="meta">' + facture.notes + '</div></div>' : ''}
 ${facture.mentionsLegales ? '<div class="legal">' + facture.mentionsLegales + '</div>' : ''}
-${company.assuranceDecennaleNom ? '<div class="legal"><strong>Assurance decennale</strong><br>Assureur: ' + company.assuranceDecennaleNom + (company.assuranceDecennaleNumero ? ' — Contrat n&deg; ' + company.assuranceDecennaleNumero : '') + (company.assuranceDecennaleZone ? '<br>Zone de couverture: ' + company.assuranceDecennaleZone : '') + '</div>' : ''}
-<div class="footer">
-<strong>${facture.company.name}</strong>${facture.company.siret ? ' &middot; SIRET: ' + facture.company.siret : ''}${company.tvaIntra ? ' &middot; TVA: ' + company.tvaIntra : ''}<br>
-${company.formeJuridique === 'Auto-entrepreneur' ? 'TVA non applicable, art. 293 B du CGI.<br>' : ''}
+${company.assuranceDecennaleNom ? '<div class="conditions"><div class="conditions-title">Assurance decennale</div><div class="meta">Assureur : ' + company.assuranceDecennaleNom + (company.assuranceDecennaleNumero ? ' — Contrat n&deg; ' + company.assuranceDecennaleNumero : '') + (company.assuranceDecennaleZone ? '<br>Zone de couverture : ' + company.assuranceDecennaleZone : '') + '</div></div>' : ''}
+${company.iban ? '<div class="conditions"><div class="conditions-title">Coordonn&eacute;es bancaires</div><div class="meta">IBAN : ' + company.iban.replace(/(.{4})/g, '$1 ').trim() + (company.bic ? '<br>BIC : ' + company.bic : '') + (company.nomBanque ? '<br>Banque : ' + company.nomBanque : '') + '</div></div>' : ''}
+<div class="legal" style="background:#fafafa;border-radius:10px;padding:14px 18px;margin-bottom:28px;font-size:11px;color:#71717a;line-height:1.7">
+<strong>Mentions legales obligatoires</strong><br>
 En cas de retard de paiement, une penalite de 3 fois le taux d&apos;interet legal sera appliquee,
 ainsi qu&apos;une indemnite forfaitaire de 40&euro; pour frais de recouvrement (Art. L441-10 du Code de commerce).<br>
-<span style="font-size:10px">Document généré avec <a href="https://stravon.fr" style="color:${brandColor};text-decoration:none;font-weight:600">STRAVON</a> — Logiciel de gestion pour artisans</span>
+${company.regimeTVA === 'franchise' ? 'TVA non applicable, art. 293 B du CGI.<br>' : ''}
+</div>
+<div class="footer">
+<strong>${facture.company.name}</strong>${facture.company.siret ? ' &middot; SIRET: ' + facture.company.siret : ''}${company.tvaIntra ? ' &middot; TVA: ' + company.tvaIntra : ''}<br>
+<span style="font-size:10px">Document g&eacute;n&eacute;r&eacute; avec <a href="https://stravon.fr" style="color:${brandColor};text-decoration:none;font-weight:600">STRAVON</a> — Logiciel de gestion pour artisans</span>
 </div>
 </body></html>`;
 

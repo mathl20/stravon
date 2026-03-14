@@ -74,8 +74,13 @@ export async function PUT(request: NextRequest) {
     if (body.delaiPaiementJours != null) data.delaiPaiementJours = Number(body.delaiPaiementJours) || 30;
     if (body.dureeValiditeDevis != null) data.dureeValiditeDevis = Number(body.dureeValiditeDevis) || 30;
 
-    // IBAN for affiliate payouts
+    // TVA regime
+    if (body.regimeTVA != null) data.regimeTVA = ['assujetti', 'franchise'].includes(body.regimeTVA) ? body.regimeTVA : 'assujetti';
+
+    // Coordonnees bancaires
     if (body.iban != null) data.iban = String(body.iban).replace(/\s+/g, '').toUpperCase() || null;
+    if (body.bic != null) data.bic = String(body.bic).replace(/\s+/g, '').toUpperCase() || null;
+    if (body.nomBanque != null) data.nomBanque = String(body.nomBanque) || null;
 
     const company = await prisma.company.update({
       where: { id: user.companyId },

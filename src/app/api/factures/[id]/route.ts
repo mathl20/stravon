@@ -57,6 +57,7 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
     if (body.status && Object.keys(body).length === 1) {
       const allowed: Record<string, string[]> = {
         'EN_ATTENTE': ['ANNULEE'],
+        'ENVOYEE': ['ANNULEE'],
         'EN_RETARD': ['ANNULEE'],
       };
       const allowedNext = allowed[existing.status] || [];
@@ -119,28 +120,10 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
   }
 }
 
-export async function DELETE(request: NextRequest, ctx: Ctx) {
-  try {
-    const user = await getCurrentUser();
-    if (!user) return NextResponse.json({ error: 'Non authentifie' }, { status: 401 });
-    const perms = getEffectivePermissions(user);
-    if (!canManageFactures(perms)) return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
-
-    const { id } = await ctx.params;
-    const facture = await prisma.facture.findFirst({ where: { id, companyId: user.companyId } });
-    if (!facture) return NextResponse.json({ error: 'Facture non trouvee' }, { status: 404 });
-
-    // Only allow deletion of EN_ATTENTE invoices (legal requirement: no deletion of sent/paid invoices)
-    if (facture.status !== 'EN_ATTENTE') {
-      return NextResponse.json({
-        error: 'Seules les factures en attente peuvent etre supprimees. Pour annuler une facture envoyee, utilisez le statut "Annulee" ou creez un avoir.',
-      }, { status: 403 });
-    }
-
-    await prisma.facture.delete({ where: { id } });
-    return NextResponse.json({ message: 'Facture supprimee' });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Erreur lors de la suppression' }, { status: 500 });
-  }
+export async function DELETE(_request: NextRequest, _ctx: Ctx) {
+  // Legal requirement: invoices cannot be deleted to maintain sequential numbering.
+  // Use status "ANNULEE" or create an avoir (credit note) instead.
+  return NextResponse.json({
+    error: 'La suppression de factures est interdite (obligation legale de numerotation sequentielle). Utilisez le statut "Annulee" ou creez un avoir.',
+  }, { status: 403 });
 }

@@ -111,9 +111,9 @@ ${fourTotal > 0 ? '<div style="background:white;border-radius:8px;padding:10px 1
 </div>
 <div style="border-top:1px solid ${brandColor}20;padding-top:14px">
 <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px;color:#71717a">Total HT</span><span style="font-size:14px;font-weight:600">${formatCurrency(devis.amountHT)}</span></div>
-<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px;color:#71717a">TVA (${devis.tvaRate}%)</span><span style="font-size:14px;font-weight:600">${formatCurrency(tva)}</span></div>
-<div style="display:flex;justify-content:space-between;padding-top:10px;border-top:2px solid #18181b"><span style="font-size:15px;font-weight:700">Total TTC</span><span style="font-size:18px;font-weight:700;color:${brandColor}">${formatCurrency(devis.amountTTC)}</span></div>
-${devis.acomptePercent ? '<div style="display:flex;justify-content:space-between;margin-top:8px"><span style="font-size:12px;color:#d97706;font-weight:500">Acompte (' + devis.acomptePercent + '%)</span><span style="font-size:13px;font-weight:600;color:#d97706">' + formatCurrency(Math.round(devis.amountTTC * devis.acomptePercent) / 100) + '</span></div><div style="display:flex;justify-content:space-between;margin-top:4px"><span style="font-size:12px;color:#71717a">Solde restant</span><span style="font-size:13px;font-weight:600">' + formatCurrency(devis.amountTTC - Math.round(devis.amountTTC * devis.acomptePercent) / 100) + '</span></div>' : ''}
+${company.regimeTVA === 'franchise' ? '<div style="font-size:11px;color:#71717a;font-style:italic;margin-bottom:6px">TVA non applicable, art. 293 B du CGI</div>' : '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px;color:#71717a">TVA (' + devis.tvaRate + '%)</span><span style="font-size:14px;font-weight:600">' + formatCurrency(tva) + '</span></div>'}
+<div style="display:flex;justify-content:space-between;padding-top:10px;border-top:2px solid #18181b"><span style="font-size:15px;font-weight:700">Total TTC</span><span style="font-size:18px;font-weight:700;color:${brandColor}">${formatCurrency(company.regimeTVA === 'franchise' ? devis.amountHT : devis.amountTTC)}</span></div>
+${(() => { const totalFinal = company.regimeTVA === 'franchise' ? devis.amountHT : devis.amountTTC; return devis.acomptePercent ? '<div style="display:flex;justify-content:space-between;margin-top:8px"><span style="font-size:12px;color:#d97706;font-weight:500">Acompte (' + devis.acomptePercent + '%)</span><span style="font-size:13px;font-weight:600;color:#d97706">' + formatCurrency(Math.round(totalFinal * devis.acomptePercent) / 100) + '</span></div><div style="display:flex;justify-content:space-between;margin-top:4px"><span style="font-size:12px;color:#71717a">Solde restant</span><span style="font-size:13px;font-weight:600">' + formatCurrency(totalFinal - Math.round(totalFinal * devis.acomptePercent) / 100) + '</span></div>' : ''; })()}
 </div>
 </div>
 <div class="meta" style="margin-top:8px">Rédigé par : ${devis.createdBy.firstName.charAt(0).toUpperCase() + devis.createdBy.firstName.slice(1).toLowerCase()} ${devis.createdBy.lastName.charAt(0).toUpperCase() + devis.createdBy.lastName.slice(1).toLowerCase()}</div>
@@ -139,7 +139,7 @@ En cas de retard de paiement, une penalite de 3 fois le taux d'interet legal ser
 ainsi qu'une indemnite forfaitaire de 40&euro; pour frais de recouvrement (Art. L441-10 du Code de commerce).<br>
 Le client beneficie d'un delai de retractation de 14 jours a compter de l'acceptation du devis
 pour les contrats conclus hors etablissement (Art. L221-18 du Code de la consommation).<br>
-${company.formeJuridique === 'Auto-entrepreneur' ? 'TVA non applicable, art. 293 B du CGI.<br>' : ''}
+${company.regimeTVA === 'franchise' ? 'TVA non applicable, art. 293 B du CGI.<br>' : ''}
 ${company.conditionsGeneralesDevis ? company.conditionsGeneralesDevis : ''}
 </div>
 <div style="text-align:center;margin-bottom:16px;font-size:11px;color:#52525b;font-style:italic">Devis re&ccedil;u avant l&rsquo;ex&eacute;cution des travaux. Le client reconnait avoir pris connaissance des conditions ci-dessus.</div>

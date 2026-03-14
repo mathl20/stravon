@@ -47,10 +47,17 @@ model Company {
   codeAPE               String?
   rcs                   String?
 
+  // TVA regime
+  regimeTVA                String   @default("assujetti") // assujetti, franchise
+
   // Assurance decennale
   assuranceDecennaleNom    String?
   assuranceDecennaleNumero String?
   assuranceDecennaleZone   String?
+
+  // Coordonnees bancaires
+  bic                      String?
+  nomBanque                String?
 
   // Default legal conditions
   conditionsGeneralesDevis String?

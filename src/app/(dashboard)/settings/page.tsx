@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import toast from 'react-hot-toast';
-import { Building2, Upload, X, Palette, Bell, Euro, FileSignature, Scale, Shield, FileText } from 'lucide-react';
+import { Building2, Upload, X, Palette, Bell, Euro, FileSignature, Scale, Shield, FileText, CreditCard } from 'lucide-react';
 import { Button, Input, Card, PageLoader } from '@/components/ui';
 import { apiFetch } from '@/lib/utils';
 
@@ -28,10 +28,15 @@ interface CompanyForm {
   capitalSocial: string;
   codeAPE: string;
   rcs: string;
+  regimeTVA: string;
   // Assurance decennale
   assuranceDecennaleNom: string;
   assuranceDecennaleNumero: string;
   assuranceDecennaleZone: string;
+  // Coordonnees bancaires
+  iban: string;
+  bic: string;
+  nomBanque: string;
   // Default conditions
   conditionsGeneralesDevis: string;
   delaiPaiementJours: number;
@@ -83,7 +88,9 @@ export default function SettingsPage() {
     relancesActive: true, relancesJours: [7, 14, 30],
     devisRelancesActive: true, devisRelancesJours: [3, 7, 14],
     tvaIntra: '', formeJuridique: '', capitalSocial: '', codeAPE: '', rcs: '',
+    regimeTVA: 'assujetti',
     assuranceDecennaleNom: '', assuranceDecennaleNumero: '', assuranceDecennaleZone: '',
+    iban: '', bic: '', nomBanque: '',
     conditionsGeneralesDevis: '', delaiPaiementJours: 30, dureeValiditeDevis: 30,
   });
   const fileRef = useRef<HTMLInputElement>(null);
@@ -108,9 +115,13 @@ export default function SettingsPage() {
           capitalSocial: (c as any).capitalSocial || '',
           codeAPE: (c as any).codeAPE || '',
           rcs: (c as any).rcs || '',
+          regimeTVA: (c as any).regimeTVA || 'assujetti',
           assuranceDecennaleNom: (c as any).assuranceDecennaleNom || '',
           assuranceDecennaleNumero: (c as any).assuranceDecennaleNumero || '',
           assuranceDecennaleZone: (c as any).assuranceDecennaleZone || '',
+          iban: (c as any).iban || '',
+          bic: (c as any).bic || '',
+          nomBanque: (c as any).nomBanque || '',
           conditionsGeneralesDevis: (c as any).conditionsGeneralesDevis || '',
           delaiPaiementJours: (c as any).delaiPaiementJours ?? 30,
           dureeValiditeDevis: (c as any).dureeValiditeDevis ?? 30,
@@ -368,6 +379,16 @@ export default function SettingsPage() {
               </div>
               <Input label="Capital social" name="capitalSocial" value={form.capitalSocial} onChange={set('capitalSocial')} placeholder="10 000 EUR" />
             </div>
+            <div>
+              <label className="label-field">Regime de TVA</label>
+              <select value={form.regimeTVA} onChange={(e) => setForm(f => ({ ...f, regimeTVA: e.target.value }))} className="input-field w-full max-w-md">
+                <option value="assujetti">Assujetti a la TVA</option>
+                <option value="franchise">Franchise en base de TVA (micro-entreprise)</option>
+              </select>
+              {form.regimeTVA === 'franchise' && (
+                <p className="text-xs text-amber-600 mt-1">La mention &quot;TVA non applicable, art. 293 B du CGI&quot; sera ajoutee sur vos devis et factures. La ligne TVA ne sera pas affichee.</p>
+              )}
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input label="N&deg; TVA intracommunautaire" name="tvaIntra" value={form.tvaIntra} onChange={set('tvaIntra')} placeholder="FR 12 345678901" />
               <Input label="Code APE / NAF" name="codeAPE" value={form.codeAPE} onChange={set('codeAPE')} placeholder="4322A" />
@@ -395,6 +416,27 @@ export default function SettingsPage() {
             <Input label="Nom de l&apos;assureur" name="assuranceDecennaleNom" value={form.assuranceDecennaleNom} onChange={set('assuranceDecennaleNom')} placeholder="AXA, MAAF, Allianz..." />
             <Input label="N&deg; de contrat / police" name="assuranceDecennaleNumero" value={form.assuranceDecennaleNumero} onChange={set('assuranceDecennaleNumero')} placeholder="POL-2024-123456" />
             <Input label="Zone de couverture geographique" name="assuranceDecennaleZone" value={form.assuranceDecennaleZone} onChange={set('assuranceDecennaleZone')} placeholder="France metropolitaine" />
+          </div>
+        </Card>
+
+        {/* ── Coordonnees bancaires ── */}
+        <Card>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center">
+              <CreditCard className="w-5 h-5 text-zinc-500" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-zinc-900">Coordonnees bancaires</h2>
+              <p className="text-xs text-zinc-400">Affichees sur vos factures pour faciliter le paiement par virement</p>
+            </div>
+          </div>
+
+          <div className="space-y-4 max-w-2xl">
+            <Input label="IBAN" name="iban" value={form.iban} onChange={set('iban')} placeholder="FR76 1234 5678 9012 3456 7890 123" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input label="BIC / SWIFT" name="bic" value={form.bic} onChange={set('bic')} placeholder="BNPAFRPP" />
+              <Input label="Nom de la banque (optionnel)" name="nomBanque" value={form.nomBanque} onChange={set('nomBanque')} placeholder="BNP Paribas" />
+            </div>
           </div>
         </Card>
 
