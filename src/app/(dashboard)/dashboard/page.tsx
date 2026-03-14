@@ -107,6 +107,7 @@ export default function DashboardPage() {
   const [onboarding, setOnboarding] = useState<{ step: number; completed: boolean; checklist: any; trialEndsAt: string | null; createdAt: string } | null>(null);
   const [showWizard, setShowWizard] = useState(false);
   const [companySiret, setCompanySiret] = useState<string | null>(null);
+  const [companyAssurance, setCompanyAssurance] = useState<string | null>(null);
 
   const canSeeRevenue = canViewGlobalRevenue(perms);
   const canSeeAdvanced = hasPermission(perms, PERMISSIONS.SETTINGS_MANAGE);
@@ -128,8 +129,8 @@ export default function DashboardPage() {
         if (!data.completed && data.step === 0) setShowWizard(true);
       })
       .catch(() => {});
-    apiFetch<{ data: { siret?: string } }>('/api/company')
-      .then((r) => setCompanySiret(r.data.siret || null))
+    apiFetch<{ data: { siret?: string; assuranceDecennaleNom?: string } }>('/api/company')
+      .then((r) => { setCompanySiret(r.data.siret || null); setCompanyAssurance(r.data.assuranceDecennaleNom || null); })
       .catch(() => {});
   }, [canSeeAdvanced]);
 
@@ -224,6 +225,20 @@ export default function DashboardPage() {
           </div>
           <Link href="/settings" className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
             Corriger
+          </Link>
+        </div>
+      )}
+
+      {/* Assurance décennale warning */}
+      {canSeeAdvanced && companyAssurance === null && companySiret !== null && (
+        <div className="flex items-center gap-3 p-4 rounded-xl border" style={{ background: 'rgba(245,158,11,0.08)', borderColor: 'rgba(245,158,11,0.2)' }}>
+          <AlertTriangle className="w-5 h-5 flex-shrink-0" style={{ color: '#f59e0b' }} />
+          <div className="flex-1">
+            <p className="text-sm font-semibold" style={{ color: '#f59e0b' }}>Assurance decennale non renseignee</p>
+            <p className="text-xs" style={{ color: '#9d9bab' }}>Obligatoire pour les professionnels du BTP. Vos devis ne mentionneront pas l&apos;assurance tant qu&apos;elle n&apos;est pas renseignee.</p>
+          </div>
+          <Link href="/settings" className="text-xs font-semibold px-3 py-1.5 rounded-lg whitespace-nowrap" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
+            Completer
           </Link>
         </div>
       )}

@@ -97,9 +97,8 @@ ${devis.client.phone ? '<br>Tel: ' + devis.client.phone : ''}${devis.client.emai
 </div></div>
 ${devis.adresseChantier ? '<div class="section"><div class="section-title">Lieu du chantier</div><div class="client-box"><div class="meta">' + devis.adresseChantier + (devis.cpChantier || devis.villeChantier ? '<br>' + (devis.cpChantier || '') + ' ' + (devis.villeChantier || '') : '') + '</div></div></div>' : ''}
 ${(() => {
-  const moTotal = devis.items.filter((it: any) => it.type === 'main_oeuvre').reduce((s: number, it: any) => s + it.total, 0);
-  const matTotal = devis.items.filter((it: any) => it.type === 'materiel').reduce((s: number, it: any) => s + it.total, 0);
-  const presTotal = devis.items.filter((it: any) => !it.type || it.type === 'prestation').reduce((s: number, it: any) => s + it.total, 0);
+  const moTotal = devis.items.filter((it: any) => !it.type || it.type === 'prestation').reduce((s: number, it: any) => s + it.total, 0);
+  const fourTotal = devis.items.filter((it: any) => it.type === 'fourniture').reduce((s: number, it: any) => s + it.total, 0);
   return `
 <div class="section">
 <div class="section-title">Resume du devis</div>
@@ -108,8 +107,7 @@ ${(() => {
 ${devis.description ? '<div style="font-size:13px;color:#52525b;margin-bottom:16px;line-height:1.6">' + devis.description + '</div>' : '<div style="margin-bottom:16px"></div>'}
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
 ${moTotal > 0 ? '<div style="background:white;border-radius:8px;padding:10px 14px;border:1px solid #e4e4e7"><div style="font-size:10px;font-weight:600;color:#0284c7;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Main d\'oeuvre</div><div style="font-size:16px;font-weight:700;color:#18181b">' + formatCurrency(moTotal) + '</div></div>' : ''}
-${matTotal > 0 ? '<div style="background:white;border-radius:8px;padding:10px 14px;border:1px solid #e4e4e7"><div style="font-size:10px;font-weight:600;color:#d97706;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Fournitures</div><div style="font-size:16px;font-weight:700;color:#18181b">' + formatCurrency(matTotal) + '</div></div>' : ''}
-${presTotal > 0 ? '<div style="background:white;border-radius:8px;padding:10px 14px;border:1px solid #e4e4e7"><div style="font-size:10px;font-weight:600;color:' + brandColor + ';text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Prestations</div><div style="font-size:16px;font-weight:700;color:#18181b">' + formatCurrency(presTotal) + '</div></div>' : ''}
+${fourTotal > 0 ? '<div style="background:white;border-radius:8px;padding:10px 14px;border:1px solid #e4e4e7"><div style="font-size:10px;font-weight:600;color:#d97706;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Fournitures</div><div style="font-size:16px;font-weight:700;color:#18181b">' + formatCurrency(fourTotal) + '</div></div>' : ''}
 </div>
 <div style="border-top:1px solid ${brandColor}20;padding-top:14px">
 <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px;color:#71717a">Total HT</span><span style="font-size:14px;font-weight:600">${formatCurrency(devis.amountHT)}</span></div>
@@ -123,8 +121,8 @@ ${devis.acomptePercent ? '<div style="display:flex;justify-content:space-between
 })()}
 <div class="section"><div class="section-title">Detail des prestations</div><table><thead><tr><th style="width:40px">Type</th><th>Description</th><th>Qte</th><th>Prix unit.</th><th>Total</th></tr></thead><tbody>
 ${devis.items.map((it: any) => {
-  const typeLabels: Record<string, string> = { main_oeuvre: 'MO', materiel: 'Fourn.', prestation: 'Prest.' };
-  const typeColors: Record<string, string> = { main_oeuvre: '#0284c7', materiel: '#d97706', prestation: brandColor };
+  const typeLabels: Record<string, string> = { prestation: 'Prest.', fourniture: 'Fourn.' };
+  const typeColors: Record<string, string> = { prestation: '#0284c7', fourniture: '#d97706' };
   const t = it.type || 'prestation';
   return `<tr><td><span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:600;color:white;background:${typeColors[t] || brandColor}">${typeLabels[t] || 'Prest.'}</span></td><td>${it.description}</td><td>${it.quantity}</td><td>${formatCurrency(it.unitPrice)}</td><td>${formatCurrency(it.total)}</td></tr>`;
 }).join('')}
@@ -133,8 +131,8 @@ ${devis.conditionsPaiement || devis.delaiTravaux ? '<div class="conditions"><div
 ${devis.conditionsParticulieres ? '<div class="conditions"><div class="conditions-title">Conditions particulieres</div><div class="meta">' + devis.conditionsParticulieres + '</div></div>' : ''}
 ${devis.notes ? '<div class="section" style="background:#fffbeb;border-left:3px solid #f59e0b;padding:12px 16px;border-radius:0 8px 8px 0"><div style="font-weight:600;font-size:12px;color:#92400e;margin-bottom:2px">Notes</div><div class="meta">' + devis.notes + '</div></div>' : ''}
 ${company.conditionsGeneralesDevis || devis.conditionsParticulieres ? '' : (() => { const duree = company.dureeValiditeDevis || 30; const dureeLabel = duree >= 30 ? (duree / 30) + ' mois' : duree + ' jours'; return '<div class="conditions"><div class="conditions-title">Conditions</div><div class="meta">Devis valable ' + dureeLabel + ' a compter de sa date d\'emission. Paiement a reception de facture.</div></div>'; })()}
-${(() => { const moItems = devis.items.filter((it: any) => it.type === 'main_oeuvre'); const moHours = moItems.reduce((s: number, it: any) => s + it.quantity, 0); return moHours > 0 && company.tauxHoraire ? '<div class="conditions"><div class="conditions-title">Taux horaire main d\'oeuvre</div><div class="meta">Taux horaire applique : ' + formatCurrency(company.tauxHoraire) + ' /h' + (moHours > 0 ? ' — ' + moHours + 'h de main d\'oeuvre' : '') + '</div></div>' : ''; })()}
-${company.assuranceDecennaleNom ? '<div class="conditions"><div class="conditions-title">Assurance decennale</div><div class="meta">Assureur : ' + company.assuranceDecennaleNom + (company.assuranceDecennaleNumero ? ' — Contrat n&deg; ' + company.assuranceDecennaleNumero : '') + (company.assuranceDecennaleZone ? '<br>Zone de couverture : ' + company.assuranceDecennaleZone : '') + '</div></div>' : '<div class="conditions" style="background:#fff7ed;border:1px solid #fed7aa"><div class="conditions-title" style="color:#c2410c">Assurance decennale</div><div class="meta" style="color:#9a3412">Informations non renseignees. Rendez-vous dans Parametres &gt; Assurance decennale pour les ajouter (obligatoire BTP).</div></div>'}
+${(() => { const moItems = devis.items.filter((it: any) => !it.type || it.type === 'prestation'); const moHours = moItems.reduce((s: number, it: any) => s + it.quantity, 0); return moHours > 0 && company.tauxHoraire ? '<div class="conditions"><div class="conditions-title">Taux horaire main d\'oeuvre</div><div class="meta">Taux horaire applique : ' + formatCurrency(company.tauxHoraire) + ' /h' + (moHours > 0 ? ' — ' + moHours + 'h de main d\'oeuvre' : '') + '</div></div>' : ''; })()}
+${company.assuranceDecennaleNom ? '<div class="conditions"><div class="conditions-title">Assurance decennale</div><div class="meta">Assureur : ' + company.assuranceDecennaleNom + (company.assuranceDecennaleNumero ? ' — Contrat n&deg; ' + company.assuranceDecennaleNumero : '') + (company.assuranceDecennaleZone ? '<br>Zone de couverture : ' + company.assuranceDecennaleZone : '') + '</div></div>' : ''}
 <div class="legal" style="background:#fafafa;border-radius:10px;padding:14px 18px;margin-bottom:28px;font-size:11px;color:#71717a;line-height:1.7">
 <strong>Mentions legales obligatoires</strong><br>
 En cas de retard de paiement, une penalite de 3 fois le taux d'interet legal sera appliquee,

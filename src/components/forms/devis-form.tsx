@@ -17,7 +17,7 @@ interface LineItem {
   description: string;
   quantity: number;
   unitPrice: number;
-  type: 'prestation' | 'main_oeuvre' | 'materiel';
+  type: 'prestation' | 'fourniture';
   prixAchat?: number | null;
   coefMarge?: number | null;
   fournisseur?: string | null;
@@ -35,8 +35,7 @@ interface MaterialSuggestion {
 
 const LINE_TYPES = [
   { value: 'prestation', label: 'Prestation', color: 'bg-brand-100 text-brand-700', icon: Wrench },
-  { value: 'main_oeuvre', label: 'Main d\'oeuvre', color: 'bg-blue-100 text-blue-700', icon: Clock },
-  { value: 'materiel', label: 'Fourniture', color: 'bg-amber-100 text-amber-700', icon: Package },
+  { value: 'fourniture', label: 'Fourniture', color: 'bg-amber-100 text-amber-700', icon: Package },
 ] as const;
 
 interface PieceJointe {
@@ -89,7 +88,7 @@ export function DevisForm({ devis }: DevisFormProps) {
       description: it.description,
       quantity: it.quantity,
       unitPrice: it.unitPrice,
-      type: ((it as any).type || 'prestation') as LineItem['type'],
+      type: (() => { const t = (it as any).type || 'prestation'; if (t === 'materiel') return 'fourniture'; if (t === 'main_oeuvre') return 'prestation'; return t; })() as LineItem['type'],
       prixAchat: (it as any).prixAchat ?? null,
       coefMarge: (it as any).coefMarge ?? null,
       fournisseur: (it as any).fournisseur ?? null,
@@ -146,8 +145,8 @@ export function DevisForm({ devis }: DevisFormProps) {
   };
 
   const addItem = (type: LineItem['type'] = 'prestation') => {
-    setItems((prev) => [...prev, { description: '', quantity: 1, unitPrice: 0, type, prixAchat: null, coefMarge: type === 'materiel' ? 1.5 : null, fournisseur: null, referenceFournisseur: null }]);
-    if (type === 'materiel') {
+    setItems((prev) => [...prev, { description: '', quantity: 1, unitPrice: 0, type, prixAchat: null, coefMarge: type === 'fourniture' ? 1.5 : null, fournisseur: null, referenceFournisseur: null }]);
+    if (type === 'fourniture') {
       setExpandedMargins((prev) => new Set([...prev, items.length]));
     }
   };
@@ -198,17 +197,17 @@ export function DevisForm({ devis }: DevisFormProps) {
       if (idx !== i) return item;
       const updated = { ...item, [field]: value };
       // Auto-calculate resale price when prixAchat or coefMarge changes on material items
-      if (updated.type === 'materiel' && updated.prixAchat != null && updated.coefMarge != null) {
+      if (updated.type === 'fourniture' && updated.prixAchat != null && updated.coefMarge != null) {
         if (field === 'prixAchat' || field === 'coefMarge') {
           updated.unitPrice = Math.round(updated.prixAchat * updated.coefMarge * 100) / 100;
         }
       }
-      // When switching to materiel type, set default coefficient
-      if (field === 'type' && value === 'materiel' && !updated.coefMarge) {
+      // When switching to fourniture type, set default coefficient
+      if (field === 'type' && value === 'fourniture' && !updated.coefMarge) {
         updated.coefMarge = 1.5;
       }
-      // Clear margin fields when switching away from materiel
-      if (field === 'type' && value !== 'materiel') {
+      // Clear margin fields when switching away from fourniture
+      if (field === 'type' && value !== 'fourniture') {
         updated.prixAchat = null;
         updated.coefMarge = null;
         updated.fournisseur = null;
@@ -497,11 +496,8 @@ export function DevisForm({ devis }: DevisFormProps) {
             <Button type="button" variant="brand" onClick={() => setShowPrestations(true)} className="text-xs !px-3 !py-1.5">
               <Wrench className="w-3.5 h-3.5" /> Prestation
             </Button>
-            <Button type="button" variant="secondary" onClick={() => addItem('materiel')} className="text-xs !px-3 !py-1.5">
-              <Package className="w-3.5 h-3.5" /> Matériel
-            </Button>
-            <Button type="button" variant="secondary" onClick={() => addItem('main_oeuvre')} className="text-xs !px-3 !py-1.5">
-              <Clock className="w-3.5 h-3.5" /> Main d'oeuvre
+            <Button type="button" variant="secondary" onClick={() => addItem('fourniture')} className="text-xs !px-3 !py-1.5">
+              <Package className="w-3.5 h-3.5" /> Fourniture
             </Button>
             <Button type="button" variant="secondary" onClick={() => addItem('prestation')} className="text-xs !px-3 !py-1.5">
               <Plus className="w-3.5 h-3.5" /> Ligne libre
@@ -513,7 +509,7 @@ export function DevisForm({ devis }: DevisFormProps) {
           {items.map((item, i) => {
             const lt = LINE_TYPES.find((t) => t.value === item.type) || LINE_TYPES[0];
             const TypeIcon = lt.icon;
-            const isMateriel = item.type === 'materiel';
+            const isMateriel = item.type === 'fourniture';
             const hasMargin = isMateriel && item.prixAchat != null && item.prixAchat > 0;
             const marginPercent = hasMargin && item.coefMarge ? Math.round((item.coefMarge - 1) * 100) : 0;
             return (
@@ -687,16 +683,13 @@ export function DevisForm({ devis }: DevisFormProps) {
         <div className="mt-4 flex justify-end">
           <div className="w-72 space-y-1.5 text-sm">
             {(() => {
-              const moTotal = items.filter((it) => it.type === 'main_oeuvre').reduce((s, it) => s + it.quantity * it.unitPrice, 0);
-              const matTotal = items.filter((it) => it.type === 'materiel').reduce((s, it) => s + it.quantity * it.unitPrice, 0);
               const presTotal = items.filter((it) => it.type === 'prestation').reduce((s, it) => s + it.quantity * it.unitPrice, 0);
-              const hasMultipleTypes = [moTotal, matTotal, presTotal].filter((t) => t > 0).length > 1;
-              if (!hasMultipleTypes) return null;
+              const fournTotal = items.filter((it) => it.type === 'fourniture').reduce((s, it) => s + it.quantity * it.unitPrice, 0);
+              if (presTotal === 0 || fournTotal === 0) return null;
               return (
                 <>
-                  {presTotal > 0 && <div className="flex justify-between text-zinc-400"><span>Prestations</span><span>{formatCurrency(presTotal)}</span></div>}
-                  {moTotal > 0 && <div className="flex justify-between text-zinc-400"><span>Main d'oeuvre</span><span>{formatCurrency(moTotal)}</span></div>}
-                  {matTotal > 0 && <div className="flex justify-between text-zinc-400"><span>Matériel</span><span>{formatCurrency(matTotal)}</span></div>}
+                  {presTotal > 0 && <div className="flex justify-between text-zinc-400"><span>Total Main d&apos;oeuvre</span><span>{formatCurrency(presTotal)}</span></div>}
+                  {fournTotal > 0 && <div className="flex justify-between text-zinc-400"><span>Total Fournitures</span><span>{formatCurrency(fournTotal)}</span></div>}
                   <div className="border-t border-zinc-100 pt-1.5" />
                 </>
               );
@@ -730,7 +723,7 @@ export function DevisForm({ devis }: DevisFormProps) {
 
         {/* Margin summary */}
         {(() => {
-          const matItems = items.filter((it) => it.type === 'materiel' && it.prixAchat != null && it.prixAchat > 0);
+          const matItems = items.filter((it) => it.type === 'fourniture' && it.prixAchat != null && it.prixAchat > 0);
           if (matItems.length === 0) return null;
           const totalAchat = matItems.reduce((s, it) => s + (it.prixAchat || 0) * it.quantity, 0);
           const totalVente = matItems.reduce((s, it) => s + it.unitPrice * it.quantity, 0);
@@ -738,7 +731,7 @@ export function DevisForm({ devis }: DevisFormProps) {
           const margePercent = totalAchat > 0 ? Math.round((totalMarge / totalAchat) * 100) : 0;
           return (
             <div className="mt-4 p-3 bg-zinc-50 rounded-xl border border-zinc-100">
-              <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">Synthèse marge matériel (confidentiel)</p>
+              <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">Synthèse marge fournitures (confidentiel)</p>
               <div className="grid grid-cols-4 gap-3 text-xs">
                 <div>
                   <p className="text-zinc-400">Total achat</p>

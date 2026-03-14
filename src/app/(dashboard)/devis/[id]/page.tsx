@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Pencil, FileDown, Send, CheckCircle, XCircle, ArrowRightLeft, Bell, Clock, Mail, Receipt, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Pencil, FileDown, Send, CheckCircle, XCircle, ArrowRightLeft, Bell, Clock, Mail, Receipt, ExternalLink, AlertTriangle } from 'lucide-react';
 import { Button, Card, PageLoader } from '@/components/ui';
 import { apiFetch, formatCurrency, formatDate, getDevisStatusLabel, getDevisStatusColor } from '@/lib/utils';
 import { canConvertDevis, canManageAllDevis, canManageFactures } from '@/lib/permissions';
@@ -21,12 +21,16 @@ export default function DevisDetailPage() {
   const [generatingFacture, setGeneratingFacture] = useState(false);
   const [relancing, setRelancing] = useState(false);
   const [sending, setSending] = useState(false);
+  const [company, setCompany] = useState<{ assuranceDecennaleNom?: string | null } | null>(null);
 
   useEffect(() => {
     apiFetch<{ data: DevisFull }>(`/api/devis/${id}`)
       .then((r) => setDevis(r.data))
       .catch(() => router.push('/devis'))
       .finally(() => setLoading(false));
+    apiFetch<{ data: { assuranceDecennaleNom?: string | null } }>('/api/company')
+      .then((r) => setCompany(r.data))
+      .catch(() => {});
   }, [id, router]);
 
   const changeStatus = async (status: string) => {
@@ -139,6 +143,20 @@ export default function DevisDetailPage() {
           <Button variant="secondary" href={`/devis/${id}/edit`}><Pencil className="w-4 h-4" /> Modifier</Button>
         </div>
       </div>
+
+      {/* Assurance décennale warning */}
+      {company && !company.assuranceDecennaleNom && (
+        <div className="flex items-center gap-3 p-4 rounded-xl border" style={{ background: 'rgba(245,158,11,0.08)', borderColor: 'rgba(245,158,11,0.2)' }}>
+          <AlertTriangle className="w-5 h-5 flex-shrink-0" style={{ color: '#f59e0b' }} />
+          <div className="flex-1">
+            <p className="text-sm font-semibold" style={{ color: '#f59e0b' }}>Assurance decennale non renseignee</p>
+            <p className="text-xs" style={{ color: '#9d9bab' }}>L&apos;assurance decennale est obligatoire pour les professionnels du BTP. Les informations n&apos;apparaitront pas sur le devis tant qu&apos;elles ne sont pas renseignees.</p>
+          </div>
+          <Link href="/settings" className="text-xs font-semibold px-3 py-1.5 rounded-lg whitespace-nowrap" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
+            Completer
+          </Link>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Main content */}
