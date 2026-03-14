@@ -718,80 +718,109 @@ html, body { overflow-x: hidden; }
 .pricing-cta.alt:hover { border-color: var(--border-hover); background: rgba(255,255,255,0.06); }
 .pricing-note { text-align: center; font-size: 0.78rem; color: var(--text-muted); margin-top: 10px; }
 
-/* ═══════════ AMBASSADEURS ═══════════ */
-.ambassador-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+/* ═══════════ TRUST BAND ═══════════ */
+.trust-band {
+  padding: 40px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-alt);
 }
-.amb-card {
+.trust-headline {
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+.trust-trades {
+  display: flex;
+  justify-content: center;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+.trust-trade {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* ═══════════ HERO — sub-CTA label ═══════════ */
+.hero-no-cb {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ═══════════ FEATURES 6-grid ═══════════ */
+.features-grid-6 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* ═══════════ TESTIMONIALS ═══════════ */
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+.testimonial-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 32px 20px;
-  text-align: center;
+  padding: 32px 28px;
   transition: all 0.3s;
-  position: relative;
-  overflow: hidden;
-}
-.amb-card:hover { transform: translateY(-4px); border-color: var(--border-accent); }
-.amb-card.pop {
-  border-color: var(--accent);
-  background: linear-gradient(180deg, rgba(108,99,255,0.07) 0%, var(--bg-card) 100%);
-}
-.amb-card.pop::after {
-  content: '\2605  Populaire';
-  position: absolute;
-  top: 10px; right: -26px;
-  background: var(--accent);
-  color: #fff;
-  font-size: 0.6rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  padding: 3px 30px;
-  transform: rotate(45deg);
-  letter-spacing: 0.06em;
-}
-.amb-emoji { font-size: 2rem; margin-bottom: 10px; display: block; }
-.amb-name { font-family: var(--font-display); font-size: 1.15rem; font-weight: 600; margin-bottom: 6px; }
-.amb-pct { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; color: var(--accent-light); margin-bottom: 10px; }
-.amb-desc { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.55; }
-.amb-extras {
   display: flex;
-  justify-content: center;
-  gap: 48px;
-  margin-top: 40px;
-  flex-wrap: wrap;
+  flex-direction: column;
 }
-.amb-extra { text-align: center; }
-.amb-extra-icon { font-size: 1.5rem; margin-bottom: 6px; }
-.amb-extra-label { font-size: 0.82rem; color: var(--text-secondary); }
-.amb-extra-label strong { color: var(--text); display: block; font-size: 0.9rem; }
-
-/* ═══════════ SOCIAL PROOF ═══════════ */
-.social-proof { text-align: center; padding: 80px 0; }
-.social-avatars { display: flex; justify-content: center; margin-bottom: 24px; }
-.social-av {
-  width: 48px; height: 48px;
+.testimonial-card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-3px);
+}
+.testimonial-stars {
+  color: #fbbf24;
+  font-size: 1rem;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+}
+.testimonial-text {
+  font-size: 0.95rem;
+  color: var(--text);
+  line-height: 1.7;
+  flex: 1;
+  margin-bottom: 24px;
+  font-style: italic;
+}
+.testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.testimonial-avatar {
+  width: 40px; height: 40px;
   border-radius: 50%;
-  background: var(--surface);
-  border: 3px solid var(--bg);
+  background: var(--accent-soft);
+  border: 2px solid var(--border-accent);
   display: flex; align-items: center; justify-content: center;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: var(--accent-light);
-  margin-left: -10px;
+  flex-shrink: 0;
 }
-.social-av:first-child { margin-left: 0; }
-.social-av.more { background: var(--accent-soft); }
-.social-text {
-  font-size: 1.1rem;
-  color: var(--text-secondary);
-  max-width: 480px;
-  margin: 0 auto;
-  line-height: 1.7;
+.testimonial-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text);
 }
-.social-text strong { color: var(--text); }
+.testimonial-role {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
 
 /* ═══════════ FINAL CTA ═══════════ */
 .final-cta { padding: 100px 0 120px; position: relative; }
@@ -879,8 +908,9 @@ html, body { overflow-x: hidden; }
 
 /* ═══════════ RESPONSIVE ═══════════ */
 @media (max-width: 1024px) {
-  .features-grid, .pricing-grid { grid-template-columns: repeat(2, 1fr); }
-  .ambassador-grid, .time-grid { grid-template-columns: repeat(2, 1fr); }
+  .features-grid, .features-grid-6, .pricing-grid { grid-template-columns: repeat(2, 1fr); }
+  .testimonials-grid { grid-template-columns: repeat(2, 1fr); }
+  .time-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 768px) {
   .nav-links { display: none !important; }
@@ -934,20 +964,21 @@ html, body { overflow-x: hidden; }
   .hero { padding: 150px 0 80px; }
   .hero-metrics { gap: 28px; flex-wrap: wrap; }
   .section { padding: 80px 0; }
-  .problem-grid, .feature-hero-row, .features-grid { grid-template-columns: 1fr; }
+  .problem-grid, .feature-hero-row, .features-grid, .features-grid-6 { grid-template-columns: 1fr; }
+  .testimonials-grid { grid-template-columns: 1fr; }
   .workflow-track { grid-template-columns: repeat(2, 1fr); gap: 32px; }
   .workflow-track::before { display: none; }
   .pricing-grid { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
-  .ambassador-grid { grid-template-columns: repeat(2, 1fr); }
   .time-grid { grid-template-columns: 1fr; }
   .time-total { flex-direction: column; gap: 4px; }
   .cta-card { padding: 48px 24px; }
   .m-footer .m-container { flex-direction: column; gap: 16px; text-align: center; }
   .hero-actions { flex-direction: column; width: 100%; align-items: center; }
   .btn-primary, .btn-ghost { width: 100%; max-width: 340px; text-align: center; justify-content: center; }
+  .trust-trades { gap: 16px; }
+  .trust-trade span { display: none; }
+  .trust-trade { font-size: 1.4rem; }
 }
 @media (max-width: 480px) {
-  .ambassador-grid { grid-template-columns: 1fr; max-width: 320px; margin: 0 auto; }
-  .amb-extras { gap: 24px; }
   .nav-brand-text { display: none; }
 }
