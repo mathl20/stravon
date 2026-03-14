@@ -47,6 +47,18 @@ import { OnboardingWizard } from '@/components/onboarding/onboarding-wizard';
 import { OnboardingChecklist } from '@/components/onboarding/onboarding-checklist';
 import { TrialSummaryPopup } from '@/components/onboarding/trial-summary-popup';
 
+function isValidSiret(siret: string): boolean {
+  const digits = siret.replace(/\s/g, '');
+  if (!/^\d{14}$/.test(digits)) return false;
+  let sum = 0;
+  for (let i = 0; i < 14; i++) {
+    let n = parseInt(digits[i], 10);
+    if (i % 2 === 1) { n *= 2; if (n > 9) n -= 9; }
+    sum += n;
+  }
+  return sum % 10 === 0;
+}
+
 const STATUS_DOT: Record<string, string> = {
   PENDING: 'bg-amber-400',
   EN_COURS: 'bg-blue-400',
@@ -94,6 +106,7 @@ export default function DashboardPage() {
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [onboarding, setOnboarding] = useState<{ step: number; completed: boolean; checklist: any; trialEndsAt: string | null; createdAt: string } | null>(null);
   const [showWizard, setShowWizard] = useState(false);
+  const [companySiret, setCompanySiret] = useState<string | null>(null);
 
   const canSeeRevenue = canViewGlobalRevenue(perms);
   const canSeeAdvanced = hasPermission(perms, PERMISSIONS.SETTINGS_MANAGE);
@@ -106,7 +119,7 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // 1b. Load onboarding status
+  // 1b. Load onboarding status + company SIRET
   useEffect(() => {
     if (!canSeeAdvanced) return;
     apiFetch<any>('/api/onboarding/status')
@@ -114,6 +127,9 @@ export default function DashboardPage() {
         setOnboarding(data);
         if (!data.completed && data.step === 0) setShowWizard(true);
       })
+      .catch(() => {});
+    apiFetch<{ data: { siret?: string } }>('/api/company')
+      .then((r) => setCompanySiret(r.data.siret || null))
       .catch(() => {});
   }, [canSeeAdvanced]);
 
@@ -196,6 +212,20 @@ export default function DashboardPage() {
       {/* Trial summary popup (J+10) */}
       {onboarding?.trialEndsAt && onboarding?.createdAt && (
         <TrialSummaryPopup trialEndsAt={onboarding.trialEndsAt} createdAt={onboarding.createdAt} />
+      )}
+
+      {/* SIRET warning */}
+      {canSeeAdvanced && companySiret !== null && !isValidSiret(companySiret) && (
+        <div className="flex items-center gap-3 p-4 rounded-xl border" style={{ background: 'rgba(245,158,11,0.08)', borderColor: 'rgba(245,158,11,0.2)' }}>
+          <AlertTriangle className="w-5 h-5 flex-shrink-0" style={{ color: '#f59e0b' }} />
+          <div className="flex-1">
+            <p className="text-sm font-semibold" style={{ color: '#f59e0b' }}>SIRET invalide ou manquant</p>
+            <p className="text-xs" style={{ color: '#9d9bab' }}>Votre SIRET est obligatoire et doit etre valide pour generer des devis conformes.</p>
+          </div>
+          <Link href="/settings" className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
+            Corriger
+          </Link>
+        </div>
       )}
 
       {/* ── Mobile-first main dashboard card ── */}

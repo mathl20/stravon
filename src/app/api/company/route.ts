@@ -72,6 +72,7 @@ export async function PUT(request: NextRequest) {
     // Default legal conditions
     if (body.conditionsGeneralesDevis != null) data.conditionsGeneralesDevis = String(body.conditionsGeneralesDevis) || null;
     if (body.delaiPaiementJours != null) data.delaiPaiementJours = Number(body.delaiPaiementJours) || 30;
+    if (body.dureeValiditeDevis != null) data.dureeValiditeDevis = Number(body.dureeValiditeDevis) || 30;
 
     // IBAN for affiliate payouts
     if (body.iban != null) data.iban = String(body.iban).replace(/\s+/g, '').toUpperCase() || null;

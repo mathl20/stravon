@@ -35,6 +35,7 @@ interface CompanyForm {
   // Default conditions
   conditionsGeneralesDevis: string;
   delaiPaiementJours: number;
+  dureeValiditeDevis: number;
 }
 
 const PRESET_COLORS = [
@@ -61,6 +62,18 @@ const METIERS = [
 
 const MAX_LOGO_SIZE = 500 * 1024;
 
+function validateSiret(siret: string): boolean {
+  const digits = siret.replace(/\s/g, '');
+  if (!/^\d{14}$/.test(digits)) return false;
+  let sum = 0;
+  for (let i = 0; i < 14; i++) {
+    let n = parseInt(digits[i], 10);
+    if (i % 2 === 1) { n *= 2; if (n > 9) n -= 9; }
+    sum += n;
+  }
+  return sum % 10 === 0;
+}
+
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -71,7 +84,7 @@ export default function SettingsPage() {
     devisRelancesActive: true, devisRelancesJours: [3, 7, 14],
     tvaIntra: '', formeJuridique: '', capitalSocial: '', codeAPE: '', rcs: '',
     assuranceDecennaleNom: '', assuranceDecennaleNumero: '', assuranceDecennaleZone: '',
-    conditionsGeneralesDevis: '', delaiPaiementJours: 30,
+    conditionsGeneralesDevis: '', delaiPaiementJours: 30, dureeValiditeDevis: 30,
   });
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -100,6 +113,7 @@ export default function SettingsPage() {
           assuranceDecennaleZone: (c as any).assuranceDecennaleZone || '',
           conditionsGeneralesDevis: (c as any).conditionsGeneralesDevis || '',
           delaiPaiementJours: (c as any).delaiPaiementJours ?? 30,
+          dureeValiditeDevis: (c as any).dureeValiditeDevis ?? 30,
         });
       })
       .catch(() => {})
@@ -165,7 +179,12 @@ export default function SettingsPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input label="Téléphone" name="phone" value={form.phone} onChange={set('phone')} placeholder="06 12 34 56 78" />
-              <Input label="SIRET" name="siret" value={form.siret} onChange={set('siret')} placeholder="123 456 789 00012" />
+              <div>
+                <Input label="SIRET" name="siret" value={form.siret} onChange={set('siret')} placeholder="123 456 789 00012" />
+                {form.siret && !validateSiret(form.siret) && (
+                  <p className="text-xs text-red-500 mt-1">SIRET invalide (14 chiffres, verification Luhn)</p>
+                )}
+              </div>
             </div>
             <Input label="Adresse" name="address" value={form.address} onChange={set('address')} placeholder="12 rue des Artisans" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -392,13 +411,25 @@ export default function SettingsPage() {
           </div>
 
           <div className="space-y-4 max-w-2xl">
-            <div>
-              <label className="label-field">Delai de paiement par defaut</label>
-              <div className="flex items-center gap-2">
-                <input type="number" min="0" value={form.delaiPaiementJours}
-                  onChange={(e) => setForm(f => ({ ...f, delaiPaiementJours: Number(e.target.value) || 30 }))}
-                  className="input-field text-sm w-24 text-center" />
-                <span className="text-sm text-zinc-500">jours</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="label-field">Delai de paiement par defaut</label>
+                <div className="flex items-center gap-2">
+                  <input type="number" min="0" value={form.delaiPaiementJours}
+                    onChange={(e) => setForm(f => ({ ...f, delaiPaiementJours: Number(e.target.value) || 30 }))}
+                    className="input-field text-sm w-24 text-center" />
+                  <span className="text-sm text-zinc-500">jours</span>
+                </div>
+              </div>
+              <div>
+                <label className="label-field">Duree de validite des devis</label>
+                <select value={form.dureeValiditeDevis} onChange={(e) => setForm(f => ({ ...f, dureeValiditeDevis: Number(e.target.value) }))} className="input-field w-full">
+                  <option value={14}>14 jours</option>
+                  <option value={30}>1 mois (30 jours)</option>
+                  <option value={60}>2 mois (60 jours)</option>
+                  <option value={90}>3 mois (90 jours)</option>
+                </select>
+                <p className="text-xs text-zinc-400 mt-1">Appliquee automatiquement aux nouveaux devis</p>
               </div>
             </div>
             <div>

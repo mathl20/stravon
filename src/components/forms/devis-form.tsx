@@ -36,7 +36,7 @@ interface MaterialSuggestion {
 const LINE_TYPES = [
   { value: 'prestation', label: 'Prestation', color: 'bg-brand-100 text-brand-700', icon: Wrench },
   { value: 'main_oeuvre', label: 'Main d\'oeuvre', color: 'bg-blue-100 text-blue-700', icon: Clock },
-  { value: 'materiel', label: 'Matériel', color: 'bg-amber-100 text-amber-700', icon: Package },
+  { value: 'materiel', label: 'Fourniture', color: 'bg-amber-100 text-amber-700', icon: Package },
 ] as const;
 
 interface PieceJointe {
@@ -108,6 +108,15 @@ export function DevisForm({ devis }: DevisFormProps) {
         if (c) setSelectedClient(c);
       }
     }).catch(() => {});
+    // Auto-set dateExpiration from company settings for new devis
+    if (!devis) {
+      apiFetch<{ data: { dureeValiditeDevis?: number } }>('/api/company').then((r) => {
+        const duree = r.data.dureeValiditeDevis || 30;
+        const exp = new Date();
+        exp.setDate(exp.getDate() + duree);
+        setForm((f) => ({ ...f, dateExpiration: exp.toISOString().split('T')[0] }));
+      }).catch(() => {});
+    }
   }, [devis?.clientId]);
 
   // Load existing attachments when editing

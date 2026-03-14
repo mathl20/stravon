@@ -55,6 +55,7 @@ model Company {
   // Default legal conditions
   conditionsGeneralesDevis String?
   delaiPaiementJours       Int     @default(30)
+  dureeValiditeDevis       Int     @default(30) // days: 14, 30, 60, 90
 
   // Onboarding
   onboardingCompleted    Boolean   @default(false)
