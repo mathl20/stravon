@@ -140,7 +140,7 @@ export function FactureForm({ facture, defaultClientId, defaultItems }: FactureF
 
         <div className="space-y-3">
           {items.map((item, i) => (
-            <div key={i} className="p-4 bg-zinc-50/80 rounded-xl border border-zinc-100">
+            <div key={i} className="p-4 rounded-xl" style={{ background: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}>
               <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                 <div className="flex-1 min-w-0">
                   <label className="text-xs text-zinc-400 mb-1 block sm:hidden">Description</label>

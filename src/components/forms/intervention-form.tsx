@@ -193,7 +193,7 @@ export function InterventionForm({ intervention }: InterventionFormProps) {
             const hasMargin = isMateriel && item.prixAchat != null && item.prixAchat > 0;
             const marginPercent = hasMargin && item.coefMarge ? Math.round((item.coefMarge - 1) * 100) : 0;
             return (
-              <div key={i} className="p-4 bg-zinc-50/80 rounded-xl border border-zinc-100 space-y-2">
+              <div key={i} className="p-4 rounded-xl space-y-2" style={{ background: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <div className="flex items-start gap-3">
                   <select
                     value={item.type}

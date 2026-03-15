@@ -513,7 +513,7 @@ export function DevisForm({ devis }: DevisFormProps) {
             const hasMargin = isMateriel && item.prixAchat != null && item.prixAchat > 0;
             const marginPercent = hasMargin && item.coefMarge ? Math.round((item.coefMarge - 1) * 100) : 0;
             return (
-              <div key={i} className="p-4 bg-zinc-50/80 rounded-xl border border-zinc-100 space-y-2">
+              <div key={i} className="p-4 rounded-xl space-y-2" style={{ background: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                   <div className="flex items-center gap-2 sm:block">
                     <select
@@ -542,15 +542,17 @@ export function DevisForm({ devis }: DevisFormProps) {
                       className="input-field text-sm relative z-10"
                     />
                     {isMateriel && suggestions?.index === i && suggestions.items.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-zinc-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                      <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-xl shadow-lg max-h-48 overflow-y-auto" style={{ background: '#1a1a24', border: '1px solid rgba(255,255,255,0.1)' }}>
                         {suggestions.items.map((s, si) => (
                           <button
                             key={si}
                             type="button"
                             onClick={() => applySuggestion(i, s)}
-                            className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-50 transition-colors border-b border-zinc-50 last:border-0"
+                            className="w-full text-left px-3 py-2 text-sm transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = '')}
                           >
-                            <span className="font-medium text-zinc-800">{s.description}</span>
+                            <span className="font-medium" style={{ color: '#eae9f0' }}>{s.description}</span>
                             <span className="flex items-center gap-3 text-xs text-zinc-400 mt-0.5">
                               <span>Vente: {formatCurrency(s.unitPrice)}</span>
                               {s.prixAchat != null && <span>Achat: {formatCurrency(s.prixAchat)}</span>}
@@ -616,7 +618,7 @@ export function DevisForm({ devis }: DevisFormProps) {
                       )}
                     </button>
                     {expandedMargins.has(i) && (
-                      <div className="mt-2 p-3 bg-white rounded-lg border border-zinc-100 space-y-2.5">
+                      <div className="mt-2 p-3 rounded-lg space-y-2.5" style={{ background: '#111119', border: '1px solid rgba(255,255,255,0.08)' }}>
                         <div className="flex flex-wrap items-center gap-3">
                           <div className="flex items-center gap-1.5">
                             <label className="text-[11px] text-zinc-400 whitespace-nowrap">Achat HT</label>
@@ -730,7 +732,7 @@ export function DevisForm({ devis }: DevisFormProps) {
           const totalMarge = totalVente - totalAchat;
           const margePercent = totalAchat > 0 ? Math.round((totalMarge / totalAchat) * 100) : 0;
           return (
-            <div className="mt-4 p-3 bg-zinc-50 rounded-xl border border-zinc-100">
+            <div className="mt-4 p-3 rounded-xl" style={{ background: '#111119', border: '1px solid rgba(255,255,255,0.08)' }}>
               <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">Synthèse marge fournitures (confidentiel)</p>
               <div className="grid grid-cols-4 gap-3 text-xs">
                 <div>
@@ -821,7 +823,7 @@ export function DevisForm({ devis }: DevisFormProps) {
         {pieces.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {pieces.map((piece, i) => (
-              <div key={piece.id || i} className="flex items-center gap-3 p-3 bg-zinc-50 rounded-xl border border-zinc-100">
+              <div key={piece.id || i} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <div className="w-8 h-8 rounded-lg bg-zinc-200 flex items-center justify-center flex-shrink-0">
                   {piece.type === 'photo' ? <Image className="w-4 h-4 text-zinc-500" /> : <FileText className="w-4 h-4 text-zinc-500" />}
                 </div>
@@ -867,7 +869,8 @@ export function DevisForm({ devis }: DevisFormProps) {
       {showAiPhotoModal && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => !aiPhotoLoading && setShowAiPhotoModal(false)}>
           <div
-            className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col animate-fade-in"
+            className="rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col animate-fade-in"
+            style={{ background: '#16161e', border: '1px solid rgba(255,255,255,0.1)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100">
@@ -880,7 +883,7 @@ export function DevisForm({ devis }: DevisFormProps) {
                   <p className="text-xs text-zinc-400">L&apos;IA analyse vos photos de chantier</p>
                 </div>
               </div>
-              <button onClick={() => !aiPhotoLoading && setShowAiPhotoModal(false)} className="p-2 text-zinc-400 hover:text-zinc-700 rounded-lg hover:bg-zinc-100 transition-colors">
+              <button onClick={() => !aiPhotoLoading && setShowAiPhotoModal(false)} className="p-2 text-zinc-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -893,8 +896,8 @@ export function DevisForm({ devis }: DevisFormProps) {
                   onClick={() => aiPhotos.length < 5 && aiPhotoInputRef.current?.click()}
                   className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${
                     aiPhotos.length < 5
-                      ? 'border-zinc-300 hover:border-emerald-400 cursor-pointer hover:bg-emerald-50/30'
-                      : 'border-zinc-200 bg-zinc-50'
+                      ? 'border-zinc-600 hover:border-emerald-400 cursor-pointer hover:bg-emerald-500/10'
+                      : 'border-zinc-700 bg-white/5'
                   }`}
                 >
                   <Camera className="w-8 h-8 text-zinc-300 mx-auto mb-2" />
@@ -966,7 +969,7 @@ export function DevisForm({ devis }: DevisFormProps) {
                 type="button"
                 onClick={() => setShowAiPhotoModal(false)}
                 disabled={aiPhotoLoading}
-                className="px-4 py-2.5 text-sm font-medium text-zinc-600 bg-zinc-100 rounded-xl hover:bg-zinc-200 transition-colors disabled:opacity-50"
+                className="px-4 py-2.5 text-sm font-medium rounded-xl transition-colors disabled:opacity-50" style={{ color: '#9d9bab', background: 'rgba(255,255,255,0.06)' }}
               >
                 Annuler
               </button>
@@ -995,7 +998,8 @@ export function DevisForm({ devis }: DevisFormProps) {
       {showAiModal && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => !aiLoading && setShowAiModal(false)}>
           <div
-            className="bg-white rounded-2xl shadow-xl w-full max-w-lg animate-fade-in"
+            className="rounded-2xl shadow-xl w-full max-w-lg animate-fade-in"
+            style={{ background: '#16161e', border: '1px solid rgba(255,255,255,0.1)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100">
@@ -1008,7 +1012,7 @@ export function DevisForm({ devis }: DevisFormProps) {
                   <p className="text-xs text-zinc-400">Décrivez les travaux, l'IA génère les lignes</p>
                 </div>
               </div>
-              <button onClick={() => !aiLoading && setShowAiModal(false)} className="p-2 text-zinc-400 hover:text-zinc-700 rounded-lg hover:bg-zinc-100 transition-colors">
+              <button onClick={() => !aiLoading && setShowAiModal(false)} className="p-2 text-zinc-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1041,7 +1045,7 @@ export function DevisForm({ devis }: DevisFormProps) {
                 type="button"
                 onClick={() => setShowAiModal(false)}
                 disabled={aiLoading}
-                className="px-4 py-2.5 text-sm font-medium text-zinc-600 bg-zinc-100 rounded-xl hover:bg-zinc-200 transition-colors disabled:opacity-50"
+                className="px-4 py-2.5 text-sm font-medium rounded-xl transition-colors disabled:opacity-50" style={{ color: '#9d9bab', background: 'rgba(255,255,255,0.06)' }}
               >
                 Annuler
               </button>

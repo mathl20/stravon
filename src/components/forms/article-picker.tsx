@@ -92,27 +92,28 @@ export function ArticlePicker({ onSelect, onClose }: ArticlePickerProps) {
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
       <div
-        className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col animate-fade-in"
+        className="rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col animate-fade-in"
+        style={{ background: '#16161e', border: '1px solid rgba(255,255,255,0.1)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100">
+        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-amber-600/20 text-amber-400 flex items-center justify-center">
               <Package className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-zinc-900">Catalogue matériel</h2>
+              <h2 className="text-base font-semibold" style={{ color: '#eae9f0' }}>Catalogue matériel</h2>
               <p className="text-xs text-zinc-400">Sélectionnez des articles à ajouter au devis</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-zinc-400 hover:text-zinc-700 rounded-lg hover:bg-zinc-100 transition-colors">
+          <button onClick={onClose} className="p-2 text-zinc-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Search */}
-        <div className="px-5 py-3 border-b border-zinc-100">
+        <div className="px-5 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
             <input
@@ -153,13 +154,13 @@ export function ArticlePicker({ onSelect, onClose }: ArticlePickerProps) {
                           key={a.id}
                           className={`w-full text-left px-3.5 py-3 rounded-xl border-2 transition-all ${
                             isSelected
-                              ? 'border-amber-500 bg-amber-50'
-                              : 'border-transparent bg-zinc-50 hover:bg-zinc-100'
+                              ? 'border-amber-500 bg-amber-600/15'
+                              : 'border-transparent hover:bg-white/5'
                           }`}
                         >
                           <div className="flex items-start justify-between gap-3">
                             <button type="button" onClick={() => toggleSelect(a.id)} className="flex-1 min-w-0 text-left">
-                              <p className="text-sm font-medium text-zinc-800">{a.nom}</p>
+                              <p className="text-sm font-medium" style={{ color: '#eae9f0' }}>{a.nom}</p>
                               {a.description && (
                                 <p className="text-xs text-zinc-400 mt-0.5 truncate">{a.description}</p>
                               )}
@@ -193,7 +194,7 @@ export function ArticlePicker({ onSelect, onClose }: ArticlePickerProps) {
                                 />
                               )}
                               <div>
-                                <p className="text-sm font-bold text-zinc-900">{formatCurrency(a.prixVente)}</p>
+                                <p className="text-sm font-bold" style={{ color: '#eae9f0' }}>{formatCurrency(a.prixVente)}</p>
                                 <p className="text-[10px] text-zinc-400">/{a.unite}</p>
                               </div>
                             </div>
@@ -221,7 +222,7 @@ export function ArticlePicker({ onSelect, onClose }: ArticlePickerProps) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 text-sm font-medium text-zinc-600 bg-zinc-100 rounded-xl hover:bg-zinc-200 transition-colors"
+              className="px-4 py-2.5 text-sm font-medium rounded-xl transition-colors" style={{ color: '#9d9bab', background: 'rgba(255,255,255,0.06)' }}
             >
               Annuler
             </button>
