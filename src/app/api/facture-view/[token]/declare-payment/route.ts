@@ -33,7 +33,7 @@ export async function POST(request: NextRequest, ctx: Ctx) {
     }
 
     // Only allow declaration for EN_ATTENTE or ENVOYEE
-    if (!['EN_ATTENTE', 'ENVOYEE'].includes(facture.status)) {
+    if (!['EN_ATTENTE', 'ENVOYEE', 'EN_RETARD'].includes(facture.status)) {
       return NextResponse.json({ error: 'Cette facture ne peut pas recevoir de déclaration de paiement.' }, { status: 400 });
     }
 

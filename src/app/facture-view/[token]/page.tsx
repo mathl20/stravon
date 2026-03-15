@@ -119,7 +119,7 @@ export default function FactureViewPage() {
 
   const brandColor = data.company.primaryColor || '#1b40f5';
   const tva = data.amountTTC - data.amountHT;
-  const canDeclare = !declared && ['EN_ATTENTE', 'ENVOYEE'].includes(data.status);
+  const canDeclare = !declared && ['EN_ATTENTE', 'ENVOYEE', 'EN_RETARD'].includes(data.status);
   const methodLabel = PAYMENT_METHODS.find(m => m.value === data.paymentDeclaredMethod)?.label || data.paymentDeclaredMethod;
 
   return (
