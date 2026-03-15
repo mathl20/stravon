@@ -427,28 +427,28 @@ export function DevisForm({ devis }: DevisFormProps) {
 
         {/* Client info card */}
         {selectedClient && (
-          <div className="bg-blue-50/60 border border-blue-100 rounded-xl p-4 space-y-2">
-            <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Informations client</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-zinc-700">
+          <div className="rounded-xl p-4 space-y-2" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)' }}>
+            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#818cf8' }}>Informations client</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm" style={{ color: '#d1d5db' }}>
               <div className="flex items-center gap-2">
-                <User className="w-3.5 h-3.5 text-zinc-400" />
-                <span className="font-medium">{selectedClient.firstName} {selectedClient.lastName}</span>
+                <User className="w-3.5 h-3.5" style={{ color: '#9ca3af' }} />
+                <span className="font-medium" style={{ color: '#f3f4f6' }}>{selectedClient.firstName} {selectedClient.lastName}</span>
               </div>
               {selectedClient.address && (
                 <div className="flex items-center gap-2">
-                  <MapPin className="w-3.5 h-3.5 text-zinc-400" />
+                  <MapPin className="w-3.5 h-3.5" style={{ color: '#9ca3af' }} />
                   <span>{selectedClient.address}{selectedClient.postalCode || selectedClient.city ? `, ${selectedClient.postalCode || ''} ${selectedClient.city || ''}` : ''}</span>
                 </div>
               )}
               {selectedClient.phone && (
                 <div className="flex items-center gap-2">
-                  <Phone className="w-3.5 h-3.5 text-zinc-400" />
+                  <Phone className="w-3.5 h-3.5" style={{ color: '#9ca3af' }} />
                   <span>{selectedClient.phone}</span>
                 </div>
               )}
               {selectedClient.email && (
                 <div className="flex items-center gap-2">
-                  <Mail className="w-3.5 h-3.5 text-zinc-400" />
+                  <Mail className="w-3.5 h-3.5" style={{ color: '#9ca3af' }} />
                   <span>{selectedClient.email}</span>
                 </div>
               )}

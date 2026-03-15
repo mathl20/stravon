@@ -351,7 +351,7 @@ export default function FactureViewPage() {
                   value={payReference}
                   onChange={(e) => setPayReference(e.target.value)}
                   placeholder="Ex: numéro de virement..."
-                  className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 text-sm focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                  className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 text-sm text-zinc-900 bg-white focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                 />
               </div>
             </div>
