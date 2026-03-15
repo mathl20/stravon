@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { UsersRound, Plus, X, Shield, RotateCcw } from 'lucide-react';
 import { Button, Input, Card, PageLoader } from '@/components/ui';
-import { apiFetch, formatDate } from '@/lib/utils';
+import { apiFetch, capitalize, formatDate } from '@/lib/utils';
 import { getRoleLabel, getRoleBadgeColor, ROLES, ALL_PERMISSIONS, DEFAULT_PERMISSIONS } from '@/lib/permissions';
 import { usePermissions } from '@/lib/permissions-context';
 import { hasPermission, PERMISSIONS } from '@/lib/permissions';
@@ -242,7 +242,7 @@ export default function TeamPage() {
               </div>
               <div>
                 <h2 className="text-base font-semibold text-zinc-900">
-                  Permissions — {editingMember.firstName} {editingMember.lastName}
+                  Permissions — {capitalize(editingMember.firstName)} {capitalize(editingMember.lastName)}
                 </h2>
                 <p className="text-xs text-zinc-400">
                   Rôle : {getRoleLabel(editingMember.role)} — Cochez les permissions à accorder
@@ -304,9 +304,9 @@ export default function TeamPage() {
                   <td className="py-3 px-3">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-xs font-bold text-zinc-600">
-                        {m.firstName[0]}{m.lastName[0]}
+                        {m.firstName[0].toUpperCase()}{m.lastName[0].toUpperCase()}
                       </div>
-                      <span className="text-sm font-medium text-zinc-900">{m.firstName} {m.lastName}</span>
+                      <span className="text-sm font-medium text-zinc-900">{capitalize(m.firstName)} {capitalize(m.lastName)}</span>
                     </div>
                   </td>
                   <td className="py-3 px-3 text-sm text-zinc-500">{m.email}</td>

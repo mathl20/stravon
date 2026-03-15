@@ -13,7 +13,7 @@ export default function NewDevisPage() {
         <button onClick={() => router.push('/devis')} className="btn-ghost !p-2"><ArrowLeft className="w-4 h-4" /></button>
         <div>
           <h1 className="page-title">Nouveau devis</h1>
-          <p className="page-subtitle">Creez un devis detaille</p>
+          <p className="page-subtitle">Créez un devis détaillé</p>
         </div>
       </div>
       <DevisForm />

@@ -25,7 +25,7 @@ export function PlanGate({ children }: { children: React.ReactNode }) {
           Abonnement requis
         </h2>
         <p className="text-sm text-zinc-500 mb-6 max-w-md">
-          Souscrivez un abonnement pour acceder au programme d&apos;affiliation et commencer a gagner de l&apos;argent en recommandant Stravon.
+          Souscrivez un abonnement pour accéder au programme d&apos;affiliation et commencer à gagner de l&apos;argent en recommandant Stravon.
         </p>
         <Link
           href="/subscription"

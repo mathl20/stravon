@@ -5,6 +5,15 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function capitalize(s: string): string {
+  if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
+
+export function formatName(firstName: string, lastName: string): string {
+  return `${capitalize(firstName)} ${capitalize(lastName)}`;
+}
+
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
 }

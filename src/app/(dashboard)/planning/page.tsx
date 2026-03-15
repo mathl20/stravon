@@ -216,23 +216,37 @@ export default function PlanningPage() {
         </div>
       </div>
 
-      {/* Week grid */}
-      <div className="grid grid-cols-7 gap-3">
-        {weekDays.map((day) => {
-          const key = toDateStr(day);
-          const isToday = key === toDateStr(new Date());
-          const dayEntries = entriesByDay[key] || [];
+      {entries.length === 0 ? (
+        /* Empty state — motivating CTA */
+        <Card>
+          <div className="text-center py-16">
+            <CalendarDays className="w-12 h-12 text-brand-200 mx-auto mb-4" />
+            <h3 className="text-base font-semibold text-zinc-900 mb-1">Planifiez votre semaine</h3>
+            <p className="text-sm text-zinc-500 max-w-sm mx-auto mb-5">
+              Aucun créneau cette semaine. Ajoutez vos premières interventions pour organiser votre planning.
+            </p>
+            {manage && (
+              <Button onClick={() => { setForm((f) => ({ ...f, date: toDateStr(new Date()) })); setShowModal(true); }}>
+                <Plus className="w-4 h-4" /> Ajouter un créneau
+              </Button>
+            )}
+          </div>
+        </Card>
+      ) : (
+        /* Week grid */
+        <div className="grid grid-cols-7 gap-3">
+          {weekDays.map((day) => {
+            const key = toDateStr(day);
+            const isToday = key === toDateStr(new Date());
+            const dayEntries = entriesByDay[key] || [];
 
-          return (
-            <div key={key} className="min-h-[180px]">
-              <div className={`text-xs font-semibold uppercase tracking-wide mb-2 px-1 ${isToday ? 'text-brand-600' : 'text-zinc-400'}`}>
-                {formatDayHeader(day)}
-              </div>
-              <div className="space-y-1.5">
-                {dayEntries.length === 0 ? (
-                  <div className="text-center py-6 text-zinc-300 text-xs">—</div>
-                ) : (
-                  dayEntries.map((entry) => (
+            return (
+              <div key={key} className="min-h-[180px]">
+                <div className={`text-xs font-semibold uppercase tracking-wide mb-2 px-1 ${isToday ? 'text-brand-600' : 'text-zinc-400'}`}>
+                  {formatDayHeader(day)}
+                </div>
+                <div className="space-y-1.5">
+                  {dayEntries.map((entry) => (
                     <Card key={entry.id} className="!p-2.5 !rounded-lg group relative">
                       <div className="flex items-start justify-between gap-1">
                         <div className="min-w-0">
@@ -263,29 +277,20 @@ export default function PlanningPage() {
                         </span>
                       </div>
                     </Card>
-                  ))
-                )}
-                {manage && (
-                  <button
-                    onClick={() => { setForm((f) => ({ ...f, date: key })); setShowModal(true); }}
-                    className="w-full py-1.5 text-[11px] text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50 rounded-lg transition-colors"
-                  >
-                    + Ajouter
-                  </button>
-                )}
+                  ))}
+                  {manage && (
+                    <button
+                      onClick={() => { setForm((f) => ({ ...f, date: key })); setShowModal(true); }}
+                      className="w-full py-1.5 text-[11px] text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50 rounded-lg transition-colors"
+                    >
+                      + Ajouter
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {entries.length === 0 && (
-        <Card>
-          <div className="text-center py-16">
-            <CalendarDays className="w-10 h-10 text-zinc-200 mx-auto mb-3" />
-            <p className="text-sm text-zinc-500">Aucun créneau cette semaine</p>
-          </div>
-        </Card>
+            );
+          })}
+        </div>
       )}
 
       {/* Create modal */}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { Clock, Plus, Check, X, Trash2, Download, CheckCircle2, XCircle, CalendarCheck, Filter, ChevronDown, Users } from 'lucide-react';
+import { Clock, Plus, Check, X, Trash2, Download, CheckCircle2, XCircle, CalendarCheck, Filter, ChevronDown, Users, MapPin } from 'lucide-react';
 import { Button, Card, PageLoader } from '@/components/ui';
 import { apiFetch, formatDate } from '@/lib/utils';
 import { canViewAllTimesheets, canValidateTimesheets } from '@/lib/permissions';
@@ -304,8 +304,8 @@ export default function FeuillesHeuresPage() {
         </Card>
       )}
 
-      <Card>
-        {filteredFeuilles.length === 0 ? (
+      {filteredFeuilles.length === 0 ? (
+        <Card>
           <div className="text-center py-16">
             <Clock className="w-10 h-10 text-zinc-200 mx-auto mb-3" />
             <p className="text-sm text-zinc-500">Aucune feuille d&apos;heures</p>
@@ -313,105 +313,159 @@ export default function FeuillesHeuresPage() {
               Créer la première
             </Link>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-zinc-100">
-                  {canValidate && (
-                    <th className="pb-3 px-3 w-10">
-                      <input
-                        type="checkbox"
-                        checked={allSelected}
-                        onChange={toggleAll}
-                        className="w-4 h-4 rounded border-zinc-300 text-brand-600 focus:ring-brand-500 cursor-pointer"
-                      />
-                    </th>
-                  )}
-                  <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide pb-3 px-3">Date</th>
-                  {showAllUsers && <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide pb-3 px-3">Utilisateur</th>}
-                  <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide pb-3 px-3">Heures</th>
-                  <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide pb-3 px-3">Panier</th>
-                  <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide pb-3 px-3">Zone</th>
-                  <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide pb-3 px-3">Gd dépl.</th>
-                  <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide pb-3 px-3">Intervention</th>
-                  <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide pb-3 px-3">Statut</th>
-                  <th className="text-right text-xs font-semibold text-zinc-400 uppercase tracking-wide pb-3 px-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredFeuilles.map((f) => {
-                  const statut = f.statut || (f.valide ? 'VALIDEE' : 'EN_ATTENTE');
-                  return (
-                    <tr key={f.id} className={`border-b border-zinc-50 last:border-0 ${selected.has(f.id) ? 'bg-brand-50/30' : ''}`}>
+        </Card>
+      ) : (
+        <>
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-3">
+            {filteredFeuilles.map((f) => {
+              const statut = f.statut || (f.valide ? 'VALIDEE' : 'EN_ATTENTE');
+              return (
+                <div key={f.id} className={`card p-4 ${selected.has(f.id) ? 'ring-2 ring-brand-300' : ''}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
                       {canValidate && (
-                        <td className="py-3 px-3">
-                          <input
-                            type="checkbox"
-                            checked={selected.has(f.id)}
-                            onChange={() => toggleSelect(f.id)}
-                            className="w-4 h-4 rounded border-zinc-300 text-brand-600 focus:ring-brand-500 cursor-pointer"
-                          />
-                        </td>
+                        <input
+                          type="checkbox"
+                          checked={selected.has(f.id)}
+                          onChange={() => toggleSelect(f.id)}
+                          className="w-4 h-4 rounded border-zinc-300 text-brand-600 focus:ring-brand-500 cursor-pointer mt-0.5"
+                        />
                       )}
-                      <td className="py-3 px-3 text-sm text-zinc-900">{formatDate(f.date)}</td>
-                      {showAllUsers && (
-                        <td className="py-3 px-3 text-sm text-zinc-700">{f.utilisateur.firstName} {f.utilisateur.lastName}</td>
-                      )}
-                      <td className="py-3 px-3 text-sm font-medium text-zinc-900">{f.heuresTravaillees}h</td>
-                      <td className="py-3 px-3">{f.panierRepas ? <Check className="w-4 h-4 text-emerald-500" /> : <X className="w-4 h-4 text-zinc-300" />}</td>
-                      <td className="py-3 px-3 text-sm text-zinc-500">{f.zone ?? '-'}</td>
-                      <td className="py-3 px-3">{f.grandDeplacement ? <Check className="w-4 h-4 text-emerald-500" /> : <X className="w-4 h-4 text-zinc-300" />}</td>
-                      <td className="py-3 px-3 text-sm text-zinc-500">
-                        {f.intervention ? (
-                          <Link href={`/interventions/${f.intervention.id}`} className="text-brand-600 hover:underline">
-                            {f.intervention.reference}
-                          </Link>
-                        ) : '-'}
-                      </td>
-                      <td className="py-3 px-3">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium border ${STATUT_STYLES[statut] || STATUT_STYLES.EN_ATTENTE}`}>
-                          {STATUT_LABELS[statut] || 'En attente'}
-                        </span>
-                        {statut === 'REFUSEE' && f.motifRefus && (
-                          <p className="text-[10px] text-red-500 mt-0.5 truncate max-w-[150px]" title={f.motifRefus}>{f.motifRefus}</p>
+                      <div>
+                        <p className="text-sm font-semibold text-zinc-900">{formatDate(f.date)}</p>
+                        {showAllUsers && (
+                          <p className="text-xs text-zinc-500 mt-0.5">{f.utilisateur.firstName} {f.utilisateur.lastName}</p>
                         )}
-                      </td>
-                      <td className="py-3 px-3 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {canValidate && (
-                            <button
-                              onClick={() => handleValidate(f.id)}
-                              className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-emerald-600 transition-colors"
-                              title={statut === 'VALIDEE' ? 'Invalider' : 'Valider'}
-                            >
-                              <Check className="w-4 h-4" />
-                            </button>
-                          )}
-                          {statut !== 'VALIDEE' && (
-                            <Link
-                              href={`/feuilles-heures/${f.id}/edit`}
-                              className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors text-sm"
-                            >
-                              Modifier
-                            </Link>
-                          )}
-                          <button
-                            onClick={() => handleDelete(f.id)}
-                            className="p-1.5 rounded-lg hover:bg-red-50 text-zinc-400 hover:text-red-600 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      </div>
+                    </div>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium border ${STATUT_STYLES[statut] || STATUT_STYLES.EN_ATTENTE}`}>
+                      {STATUT_LABELS[statut] || 'En attente'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-4 mt-3 text-sm">
+                    <span className="font-semibold text-zinc-900">{f.heuresTravaillees}h</span>
+                    {f.panierRepas && <span className="text-xs text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded">Panier</span>}
+                    {f.zone != null && <span className="text-xs text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded">Zone {f.zone}</span>}
+                    {f.grandDeplacement && <span className="text-xs text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded flex items-center gap-1"><MapPin className="w-3 h-3" /> Déplacement</span>}
+                  </div>
+
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-100">
+                    <div className="text-xs text-zinc-500">
+                      {f.intervention ? (
+                        <Link href={`/interventions/${f.intervention.id}`} className="text-brand-600 hover:underline" onClick={(e) => e.stopPropagation()}>
+                          {f.intervention.reference}
+                        </Link>
+                      ) : <span className="text-zinc-300">Sans intervention liée</span>}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {canValidate && (
+                        <button onClick={() => handleValidate(f.id)} className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-emerald-600 transition-colors" title={statut === 'VALIDEE' ? 'Invalider' : 'Valider'}>
+                          <Check className="w-4 h-4" />
+                        </button>
+                      )}
+                      {statut !== 'VALIDEE' && (
+                        <Link href={`/feuilles-heures/${f.id}/edit`} className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors text-xs font-medium">
+                          Modifier
+                        </Link>
+                      )}
+                      <button onClick={() => handleDelete(f.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-zinc-400 hover:text-red-600 transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  {statut === 'REFUSEE' && f.motifRefus && (
+                    <p className="text-xs text-red-500 mt-2">{f.motifRefus}</p>
+                  )}
+                </div>
+              );
+            })}
           </div>
-        )}
-      </Card>
+
+          {/* Desktop table */}
+          <Card className="hidden md:block">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-zinc-100">
+                    {canValidate && (
+                      <th className="pb-3 px-3 w-10">
+                        <input type="checkbox" checked={allSelected} onChange={toggleAll}
+                          className="w-4 h-4 rounded border-zinc-300 text-brand-600 focus:ring-brand-500 cursor-pointer" />
+                      </th>
+                    )}
+                    <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide pb-3 px-3">Date</th>
+                    {showAllUsers && <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide pb-3 px-3">Utilisateur</th>}
+                    <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide pb-3 px-3">Heures</th>
+                    <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide pb-3 px-3">Panier</th>
+                    <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide pb-3 px-3">Zone</th>
+                    <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide pb-3 px-3 whitespace-nowrap">Déplacement</th>
+                    <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide pb-3 px-3">Intervention</th>
+                    <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide pb-3 px-3">Statut</th>
+                    <th className="text-right text-xs font-semibold text-zinc-400 uppercase tracking-wide pb-3 px-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredFeuilles.map((f) => {
+                    const statut = f.statut || (f.valide ? 'VALIDEE' : 'EN_ATTENTE');
+                    return (
+                      <tr key={f.id} className={`border-b border-zinc-50 last:border-0 ${selected.has(f.id) ? 'bg-brand-50/30' : ''}`}>
+                        {canValidate && (
+                          <td className="py-3 px-3">
+                            <input type="checkbox" checked={selected.has(f.id)} onChange={() => toggleSelect(f.id)}
+                              className="w-4 h-4 rounded border-zinc-300 text-brand-600 focus:ring-brand-500 cursor-pointer" />
+                          </td>
+                        )}
+                        <td className="py-3 px-3 text-sm text-zinc-900">{formatDate(f.date)}</td>
+                        {showAllUsers && (
+                          <td className="py-3 px-3 text-sm text-zinc-700">{f.utilisateur.firstName} {f.utilisateur.lastName}</td>
+                        )}
+                        <td className="py-3 px-3 text-sm font-medium text-zinc-900">{f.heuresTravaillees}h</td>
+                        <td className="py-3 px-3">{f.panierRepas ? <Check className="w-4 h-4 text-emerald-500" /> : <X className="w-4 h-4 text-zinc-300" />}</td>
+                        <td className="py-3 px-3 text-sm text-zinc-500">{f.zone ?? '—'}</td>
+                        <td className="py-3 px-3">{f.grandDeplacement ? <Check className="w-4 h-4 text-emerald-500" /> : <X className="w-4 h-4 text-zinc-300" />}</td>
+                        <td className="py-3 px-3 text-sm text-zinc-500">
+                          {f.intervention ? (
+                            <Link href={`/interventions/${f.intervention.id}`} className="text-brand-600 hover:underline">
+                              {f.intervention.reference}
+                            </Link>
+                          ) : <span className="text-zinc-300">Sans intervention</span>}
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium border ${STATUT_STYLES[statut] || STATUT_STYLES.EN_ATTENTE}`}>
+                            {STATUT_LABELS[statut] || 'En attente'}
+                          </span>
+                          {statut === 'REFUSEE' && f.motifRefus && (
+                            <p className="text-[10px] text-red-500 mt-0.5 truncate max-w-[150px]" title={f.motifRefus}>{f.motifRefus}</p>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            {canValidate && (
+                              <button onClick={() => handleValidate(f.id)} className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-emerald-600 transition-colors" title={statut === 'VALIDEE' ? 'Invalider' : 'Valider'}>
+                                <Check className="w-4 h-4" />
+                              </button>
+                            )}
+                            {statut !== 'VALIDEE' && (
+                              <Link href={`/feuilles-heures/${f.id}/edit`} className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors text-sm">
+                                Modifier
+                              </Link>
+                            )}
+                            <button onClick={() => handleDelete(f.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-zinc-400 hover:text-red-600 transition-colors">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </>
+      )}
     </div>
   );
 }

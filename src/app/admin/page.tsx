@@ -215,7 +215,7 @@ export default function AdminPage() {
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Vue d&apos;ensemble</h1>
-          <p className="text-sm text-zinc-500 mt-1">Gerez vos entreprises et leurs equipes</p>
+          <p className="text-sm text-zinc-500 mt-1">Gérez vos entreprises et leurs équipes</p>
         </div>
         <button onClick={handleRefresh} disabled={refreshing} className="btn-secondary self-start sm:self-auto">
           <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />

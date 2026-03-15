@@ -178,7 +178,7 @@ export default function TicketDetailPage() {
         </form>
       ) : (
         <div className="card p-4 text-center text-sm text-zinc-500">
-          Ce ticket est ferme. Creez un nouveau ticket si necessaire.
+          Ce ticket est fermé. Créez un nouveau ticket si nécessaire.
         </div>
       )}
     </div>

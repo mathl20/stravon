@@ -7,7 +7,7 @@ export default function NewFacturePage() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="page-title">Nouvelle facture</h1>
-        <p className="page-subtitle">Creez une facture detaillee</p>
+        <p className="page-subtitle">Créez une facture détaillée</p>
       </div>
       <FactureForm />
     </div>

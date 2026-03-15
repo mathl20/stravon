@@ -86,7 +86,7 @@ export default function SupportPage() {
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
         <div>
           <h1 className="page-title">Support</h1>
-          <p className="page-subtitle">Contactez-nous pour toute question ou probleme</p>
+          <p className="page-subtitle">Contactez-nous pour toute question ou problème</p>
         </div>
         <button onClick={() => setShowForm(!showForm)} className="btn-primary self-start sm:self-auto">
           <Plus className="w-4 h-4" />
@@ -105,18 +105,18 @@ export default function SupportPage() {
                 type="text"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                placeholder="Decrivez votre probleme en quelques mots"
+                placeholder="Décrivez votre problème en quelques mots"
                 className="input-field"
                 required
               />
             </div>
             <div>
-              <label className="label-field">Categorie</label>
+              <label className="label-field">Catégorie</label>
               <select value={category} onChange={(e) => setCategory(e.target.value)} className="input-field">
-                <option value="general">General</option>
-                <option value="bug">Bug / Probleme technique</option>
+                <option value="general">Général</option>
+                <option value="bug">Bug / Problème technique</option>
                 <option value="billing">Facturation / Abonnement</option>
-                <option value="feature">Suggestion / Amelioration</option>
+                <option value="feature">Suggestion / Amélioration</option>
                 <option value="other">Autre</option>
               </select>
             </div>
@@ -126,7 +126,7 @@ export default function SupportPage() {
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Decrivez votre probleme en detail..."
+              placeholder="Décrivez votre problème en détail..."
               rows={4}
               className="input-field resize-none"
               required
@@ -155,7 +155,7 @@ export default function SupportPage() {
             <MessageSquare className="w-6 h-6 text-zinc-400" />
           </div>
           <p className="font-medium text-zinc-700">Aucun ticket</p>
-          <p className="text-sm text-zinc-400 mt-1">Creez un ticket pour contacter le support</p>
+          <p className="text-sm text-zinc-400 mt-1">Créez un ticket pour contacter le support</p>
         </div>
       ) : (
         <div className="space-y-3">

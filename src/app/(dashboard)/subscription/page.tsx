@@ -195,12 +195,12 @@ export default function SubscriptionPage() {
           {hasActive ? 'Votre abonnement' : 'Tarification simple et transparente'}
         </div>
         <h1 className="text-3xl font-bold text-zinc-900 tracking-tight mb-3">
-          {hasActive ? 'Gerez votre abonnement' : 'Choisissez le plan adapte a votre activite'}
+          {hasActive ? 'Gérez votre abonnement' : 'Choisissez le plan adapté à votre activité'}
         </h1>
         <p className="text-zinc-500 text-sm max-w-lg mx-auto">
           {hasActive
-            ? 'Changez de plan ou gerez votre facturation en quelques clics.'
-            : 'Sans engagement, annulez a tout moment.'}
+            ? 'Changez de plan ou gérez votre facturation en quelques clics.'
+            : 'Sans engagement, annulez à tout moment.'}
         </p>
       </div>
 

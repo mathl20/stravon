@@ -162,7 +162,7 @@ export default function ParrainagePage() {
               <DollarSign className="w-4.5 h-4.5 text-violet-600" />
             </div>
             <div>
-              <p className="text-[11px] text-zinc-400 font-medium">Total gagne</p>
+              <p className="text-[11px] text-zinc-400 font-medium">Total gagné</p>
               <p className="text-xl font-bold text-violet-600">{formatCurrency(data.totalEarned)}</p>
             </div>
           </div>
@@ -239,7 +239,7 @@ export default function ParrainagePage() {
               <h3 className="text-sm font-semibold text-zinc-900">Compte de paiement</h3>
               <p className="text-xs text-zinc-400">
                 {data.connectOnboarded
-                  ? 'Votre compte Stripe est configure. Les commissions sont versees automatiquement.'
+                  ? 'Votre compte Stripe est configuré. Les commissions sont versées automatiquement.'
                   : 'Configurez votre compte Stripe pour recevoir vos commissions.'}
               </p>
             </div>
@@ -297,7 +297,7 @@ export default function ParrainagePage() {
               <Users className="w-7 h-7 text-zinc-400" />
             </div>
             <p className="text-sm font-medium text-zinc-700">Aucun filleul pour le moment</p>
-            <p className="text-xs text-zinc-400 mt-1">Partagez votre code pour commencer a gagner des commissions</p>
+            <p className="text-xs text-zinc-400 mt-1">Partagez votre code pour commencer à gagner des commissions</p>
           </div>
         )}
       </Card>
@@ -359,7 +359,7 @@ export default function ParrainagePage() {
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-lg bg-brand-100 flex items-center justify-center flex-shrink-0 text-sm font-bold text-brand-600">2</div>
             <div>
-              <p className="text-sm font-medium text-zinc-800">Commission recurrente</p>
+              <p className="text-sm font-medium text-zinc-800">Commission récurrente</p>
               <p className="text-xs text-zinc-400 mt-0.5">Vous touchez {Math.round(data.commissionRate * 100)}% sur chaque paiement mensuel</p>
             </div>
           </div>
@@ -367,7 +367,7 @@ export default function ParrainagePage() {
             <div className="w-8 h-8 rounded-lg bg-brand-100 flex items-center justify-center flex-shrink-0 text-sm font-bold text-brand-600">3</div>
             <div>
               <p className="text-sm font-medium text-zinc-800">Versement automatique</p>
-              <p className="text-xs text-zinc-400 mt-0.5">Les commissions sont versees automatiquement via Stripe</p>
+              <p className="text-xs text-zinc-400 mt-0.5">Les commissions sont versées automatiquement via Stripe</p>
             </div>
           </div>
         </div>

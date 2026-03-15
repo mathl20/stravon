@@ -39,7 +39,7 @@ const PieChart = dynamic(() => import('@/components/dashboard/pie-chart').then(m
 const ConversionCard = dynamic(() => import('@/components/dashboard/conversion-card').then(m => m.ConversionCard), { ssr: false, loading: () => <div className="h-32 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" /> });
 import { DateRangePicker } from '@/components/dashboard/date-range-picker';
 import { Card, StatusBadge, PageLoader } from '@/components/ui';
-import { apiFetch, formatCurrency, formatDate } from '@/lib/utils';
+import { apiFetch, capitalize, formatCurrency, formatDate } from '@/lib/utils';
 import { canManageClients, canViewGlobalRevenue, canViewProfitability, hasPermission, PERMISSIONS } from '@/lib/permissions';
 import { usePermissions } from '@/lib/permissions-context';
 import type { DashboardStats } from '@/types';
@@ -258,7 +258,7 @@ export default function DashboardPage() {
           {/* Greeting */}
           <div className="px-5 pt-5 pb-4">
             <p className="text-base font-bold text-white">
-              {greeting}{stats.userFirstName ? `, ${stats.userFirstName}` : ''} 👋
+              {greeting}{stats.userFirstName ? `, ${capitalize(stats.userFirstName)}` : ''} 👋
             </p>
             <p className="text-[11px] capitalize" style={{ color: '#9d9bab' }}>{dateStr}</p>
           </div>
@@ -309,6 +309,16 @@ export default function DashboardPage() {
               </div>
             </div>
           )}
+
+          {/* Quick actions inside dark card */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 px-5 pb-4">
+            {quickActions.map((action) => (
+              <Link key={action.href} href={action.href} className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium transition-colors" style={{ background: 'rgba(255,255,255,0.06)', color: '#9d9bab', border: '1px solid rgba(255,255,255,0.06)' }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.10)'; e.currentTarget.style.color = '#fff'; }} onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#9d9bab'; }}>
+                <action.icon className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>{action.label}</span>
+              </Link>
+            ))}
+          </div>
 
           {/* Activité récente */}
           {stats.activiteRecente && stats.activiteRecente.length > 0 && (
@@ -368,16 +378,6 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
-      </div>
-
-      {/* Quick actions */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {quickActions.map((action) => (
-          <Link key={action.href} href={action.href} className="quick-action">
-            <action.icon className="w-4 h-4 flex-shrink-0" />
-            <span>{action.label}</span>
-          </Link>
-        ))}
       </div>
 
       {/* Onboarding checklist */}
