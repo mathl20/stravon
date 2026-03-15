@@ -55,7 +55,7 @@ export async function GET() {
       },
     });
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://stravon-weld.vercel.app';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://stravon.fr';
 
     return NextResponse.json({
       data: {

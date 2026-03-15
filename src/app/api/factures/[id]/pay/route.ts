@@ -59,7 +59,7 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
     // Snapshot the PDF at payment time (legal archival requirement)
     if (!facture.pdfSnapshot) {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://stravon-weld.vercel.app');
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://stravon.fr');
         const pdfRes = await fetch(`${baseUrl}/api/factures/${id}/pdf`, {
           headers: { cookie: request.headers.get('cookie') || '' },
         });

@@ -88,7 +88,7 @@ export async function POST(request: NextRequest, ctx: Ctx) {
     // Send email to artisan (creator + company email)
     const company = facture.company as any;
     const brandColor = company.primaryColor || '#1b40f5';
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://stravon-weld.vercel.app';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://stravon.fr';
     const factureUrl = `${baseUrl}/factures/${facture.id}`;
 
     const emailHtml = `

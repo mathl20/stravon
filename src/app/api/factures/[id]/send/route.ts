@@ -29,9 +29,9 @@ export async function POST(_: NextRequest, { params }: Ctx) {
       return NextResponse.json({ error: 'Le client n\'a pas d\'adresse email' }, { status: 400 });
     }
 
-    // Generate view token for public page (valid 7 days)
+    // Generate view token for public page (valid 90 days)
     const viewToken = crypto.randomBytes(32).toString('hex');
-    const viewTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const viewTokenExpiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
     await prisma.facture.update({
       where: { id },
       data: { viewToken, viewTokenExpiresAt },
@@ -39,7 +39,7 @@ export async function POST(_: NextRequest, { params }: Ctx) {
 
     const company = facture.company;
     const brandColor = company.primaryColor || '#1b40f5';
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://stravon-weld.vercel.app';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://stravon.fr';
     const viewUrl = `${baseUrl}/facture-view/${viewToken}`;
     const pdfUrl = `${baseUrl}/api/factures/${id}/pdf`;
 
