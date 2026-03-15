@@ -270,7 +270,15 @@ export default function PlanningPage() {
                             {formatTime(entry.heureDebut)} – {formatTime(entry.heureFin)}
                           </p>
                           {entry.intervention?.address && (
-                            <p className="text-[10px] text-zinc-400 truncate mt-0.5">{entry.intervention.address}</p>
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(entry.intervention.address)}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-[10px] text-brand-500 hover:text-brand-400 truncate mt-0.5 block hover:underline"
+                            >
+                              📍 {entry.intervention.address}
+                            </a>
                           )}
                         </div>
                         {manage && (

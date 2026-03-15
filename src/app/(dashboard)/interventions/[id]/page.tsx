@@ -237,11 +237,29 @@ export default function InterventionDetailPage() {
             </div>
           </div>
 
-          {/* Address */}
-          {inv.address && (
-            <div className="flex items-center gap-2 text-sm rounded-xl px-4 py-2.5" style={{ color: '#9d9bab', background: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <MapPin className="w-4 h-4 text-zinc-400 flex-shrink-0" />
-              <span>{inv.address}</span>
+          {/* Address + client contact for employees */}
+          {(inv.address || inv.client.phone) && (
+            <div className="rounded-xl px-4 py-3 space-y-2" style={{ background: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}>
+              {inv.address && (
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(inv.address)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 text-sm text-brand-400 hover:text-brand-300 hover:underline transition-colors"
+                >
+                  <MapPin className="w-4 h-4 flex-shrink-0" />
+                  <span>{inv.address}</span>
+                </a>
+              )}
+              {inv.client.phone && (
+                <a
+                  href={`tel:${inv.client.phone}`}
+                  className="flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 hover:underline transition-colors"
+                >
+                  <span className="text-base">📞</span>
+                  <span>{inv.client.firstName} {inv.client.lastName} — {inv.client.phone}</span>
+                </a>
+              )}
             </div>
           )}
 

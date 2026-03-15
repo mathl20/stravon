@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { LayoutDashboard, Users, FileText, Settings, LogOut, PanelLeftClose, PanelLeftOpen, Zap, UsersRound, Clock, CalendarDays, FileSignature, Receipt, Sparkles, X, Wrench, Palmtree, Gift, CreditCard, ShieldCheck, LifeBuoy, UserCircle, Link2, Rocket } from 'lucide-react';
-import { canEditSettings, canManageTeam, canManageFactures, canViewClients, hasPermission, PERMISSIONS } from '@/lib/permissions';
+import { canEditSettings, canManageTeam, canManageFactures, canViewClients, hasPermission, isEmployeeRole, PERMISSIONS } from '@/lib/permissions';
 import { usePlan } from '@/lib/plan-context';
 import { getRequiredTierForRoute } from '@/lib/plans';
 
@@ -28,12 +28,12 @@ const NAV_ITEMS = [
   { href: '/feuilles-heures', label: 'Feuilles d\'heures', icon: Clock, showFor: (p: string[]) => hasPermission(p, PERMISSIONS.TIMESHEETS_VIEW) },
   { href: '/conges', label: 'Congés', icon: Palmtree, showFor: (p: string[]) => canEditSettings(p) },
   { href: '/planning', label: 'Planning', icon: CalendarDays, showFor: (p: string[]) => hasPermission(p, PERMISSIONS.PLANNING_VIEW) },
-  { href: '/prestations', label: 'Prestations', icon: Wrench, showFor: () => true },
+  { href: '/prestations', label: 'Prestations', icon: Wrench, showFor: (p: string[]) => canEditSettings(p) },
   { href: '/assistant', label: 'Assistant IA', icon: Sparkles, showFor: (p: string[]) => hasPermission(p, PERMISSIONS.CLIENTS_MANAGE) || hasPermission(p, PERMISSIONS.INTERVENTIONS_MANAGE) || hasPermission(p, PERMISSIONS.DEVIS_MANAGE) },
   { href: '/parrainage', label: 'Parrainage', icon: Gift, showFor: (p: string[]) => canEditSettings(p), paidOnly: true },
   { href: '/affiliation', label: 'Affiliation', icon: Link2, showFor: (p: string[]) => canEditSettings(p), paidOnly: true },
   { href: '/team', label: 'Équipe', icon: UsersRound, showFor: (p: string[]) => canManageTeam(p) },
-  { href: '/support', label: 'Support', icon: LifeBuoy, showFor: (p: string[]) => canEditSettings(p) },
+  { href: '/support', label: 'Support', icon: LifeBuoy, showFor: () => true },
   { href: '/subscription', label: 'Abonnement', icon: CreditCard, showFor: (p: string[]) => canEditSettings(p) },
   { href: '/settings', label: 'Paramètres', icon: Settings, showFor: (p: string[]) => canEditSettings(p) },
 ];
@@ -47,6 +47,8 @@ export function Sidebar({ companyName, collapsed, onToggle, permissions, onLinkC
     window.location.href = '/login';
   };
 
+  const isEmp = isEmployeeRole(permissions);
+
   const visibleNav = NAV_ITEMS.filter((item) => {
     if (!item.showFor(permissions)) return false;
     // Hide items that require a higher plan tier
@@ -55,6 +57,13 @@ export function Sidebar({ companyName, collapsed, onToggle, permissions, onLinkC
     // Hide paid-only items for trial users
     if (item.paidOnly && !isPaidSubscriber) return false;
     return true;
+  }).map((item) => {
+    // Rename labels for employees
+    if (!isEmp) return item;
+    if (item.href === '/planning') return { ...item, label: 'Mon planning' };
+    if (item.href === '/interventions') return { ...item, label: 'Mes interventions' };
+    if (item.href === '/feuilles-heures') return { ...item, label: 'Mes heures' };
+    return item;
   });
   const isCollapsed = isMobile ? false : collapsed;
 
@@ -143,7 +152,7 @@ export function Sidebar({ companyName, collapsed, onToggle, permissions, onLinkC
               {isCollapsed ? <PanelLeftOpen className="w-[18px] h-[18px]" /> : <><PanelLeftClose className="w-[18px] h-[18px]" /><span>Réduire</span></>}
             </button>
           )}
-          {onRestartGuide && (
+          {onRestartGuide && !isEmp && (
             <button onClick={() => { onRestartGuide(); onLinkClick?.(); }}
               title={isCollapsed ? 'Revoir le guide' : undefined}
               className={cn(
