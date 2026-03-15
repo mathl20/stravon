@@ -277,7 +277,7 @@ export default function DashboardPage() {
                 })()}
               </div>
               <div className="p-3 animate-fade-up" style={{ background: '#1a1a24', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', animationDelay: '100ms' }}>
-                <p className="font-medium uppercase" style={{ color: '#5f5d6e', fontSize: '9px', letterSpacing: '0.06em' }}>EN ATTENTE</p>
+                <p className="font-medium uppercase" style={{ color: '#5f5d6e', fontSize: '9px', letterSpacing: '0.06em' }}>NON PAYÉES</p>
                 <p className="font-bold mt-1 tabular-nums" style={{ color: '#4ade80', fontSize: '22px' }}>{formatCurrency(stats.pendingRevenue)}</p>
                 <p style={{ color: '#4ade80', fontSize: '9px' }}>{stats.facturesEnAttenteCount ?? 0} facture{(stats.facturesEnAttenteCount ?? 0) !== 1 ? 's' : ''}</p>
               </div>
@@ -337,7 +337,10 @@ export default function DashboardPage() {
                     const getBadge = (): { label: string; color: string; bg: string } => {
                       if (item.type === 'facture') {
                         if (item.status === 'PAYEE' || item.status === 'PAID') return { label: 'Payée', color: '#4ade80', bg: 'rgba(74,222,128,0.15)' };
+                        if (item.status === 'PAIEMENT_DECLARE') return { label: 'Paiement déclaré', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)' };
+                        if (item.status === 'ENVOYEE') return { label: 'Envoyée', color: '#60a5fa', bg: 'rgba(96,165,250,0.15)' };
                         if (item.status === 'EN_RETARD') return { label: 'En retard', color: '#f87171', bg: 'rgba(248,113,113,0.15)' };
+                        if (item.status === 'ANNULEE') return { label: 'Annulée', color: '#9d9bab', bg: 'rgba(255,255,255,0.08)' };
                         return { label: 'En attente', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' };
                       }
                       if (item.type === 'devis') {

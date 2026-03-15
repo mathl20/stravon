@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
         prisma.facture.count({
           where: {
             companyId: user.companyId,
-            status: 'EN_ATTENTE',
+            status: { in: ['EN_ATTENTE', 'ENVOYEE', 'EN_RETARD'] },
             dateEcheance: { lt: now },
           } as any,
         }),
@@ -234,7 +234,7 @@ export async function GET(request: NextRequest) {
     if (!isEmploye) {
       [interventionsCetteSemaine, facturesEnAttenteCount, devisEnCours, devisARelancer] = await Promise.all([
         prisma.intervention.count({ where: { companyId: user.companyId, date: { gte: startOfWeek } } as any }),
-        prisma.facture.count({ where: { companyId: user.companyId, status: 'EN_ATTENTE' } as any }),
+        prisma.facture.count({ where: { companyId: user.companyId, status: { in: ['EN_ATTENTE', 'ENVOYEE', 'PAIEMENT_DECLARE'] } } as any }),
         prisma.devis.count({ where: { companyId: user.companyId, status: 'ENVOYE' } as any }),
         prisma.devis.count({ where: { companyId: user.companyId, status: 'ENVOYE', createdAt: { lt: sevenDaysAgo } } as any }),
       ]);
@@ -272,7 +272,7 @@ export async function GET(request: NextRequest) {
         activiteRecente: isEmploye ? [] : activiteRecente,
       },
     });
-    res.headers.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60');
+    res.headers.set('Cache-Control', 'private, no-cache, max-age=0');
     return res;
   } catch (error) {
     console.error(error);
