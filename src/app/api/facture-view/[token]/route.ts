@@ -46,6 +46,8 @@ export async function GET(_: NextRequest, ctx: Ctx) {
         company: facture.company,
         createdBy: facture.createdBy,
         items: facture.items,
+        paymentDeclaredAt: (facture as any).paymentDeclaredAt,
+        paymentDeclaredMethod: (facture as any).paymentDeclaredMethod,
       },
     });
   } catch (error) {

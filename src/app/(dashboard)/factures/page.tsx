@@ -12,6 +12,7 @@ const STATUS_FILTERS = [
   { value: '', label: 'Tous' },
   { value: 'EN_ATTENTE', label: 'En attente' },
   { value: 'ENVOYEE', label: 'Envoyée' },
+  { value: 'PAIEMENT_DECLARE', label: 'Paiement déclaré' },
   { value: 'PAYEE', label: 'Payée' },
   { value: 'EN_RETARD', label: 'En retard' },
   { value: 'ANNULEE', label: 'Annulée' },

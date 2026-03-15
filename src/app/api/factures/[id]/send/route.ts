@@ -88,6 +88,12 @@ export async function POST(_: NextRequest, { params }: Ctx) {
             </a>
           </div>
 
+          <div style="text-align:center;margin-bottom:12px">
+            <a href="${viewUrl}" style="display:inline-block;padding:10px 28px;background:#059669;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:600">
+              ✅ J'ai pay&eacute;
+            </a>
+          </div>
+
           <div style="text-align:center;margin-bottom:32px">
             <a href="${pdfUrl}" style="display:inline-block;padding:10px 28px;background:#71717a;color:white;text-decoration:none;border-radius:10px;font-size:13px;font-weight:600">
               T&eacute;l&eacute;charger le PDF

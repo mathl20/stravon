@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Pencil, FileDown, CreditCard, Receipt, Mail, Ban, FileX } from 'lucide-react';
+import { ArrowLeft, Pencil, FileDown, CreditCard, Receipt, Mail, Ban, FileX, CheckCircle2, XCircle } from 'lucide-react';
 import { Button, Card, PageLoader } from '@/components/ui';
 import { apiFetch, formatCurrency, formatDate, getFactureStatusLabel, getFactureStatusColor, getModePaiementLabel, cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
@@ -54,8 +54,32 @@ export default function FactureDetailPage() {
         <div className="flex gap-2 flex-wrap">
           {(fac.status === 'EN_ATTENTE' || fac.status === 'ENVOYEE') && (
             <Button variant="brand" onClick={() => setShowPayment(true)}>
-              <CreditCard className="w-4 h-4" /> Marquer payee
+              <CreditCard className="w-4 h-4" /> Marquer payée
             </Button>
+          )}
+          {fac.status === 'PAIEMENT_DECLARE' && (
+            <>
+              <Button variant="brand" onClick={async () => {
+                if (!confirm('Valider le paiement déclaré par le client ?')) return;
+                try {
+                  await apiFetch(`/api/factures/${id}/pay`, { method: 'PUT', body: JSON.stringify({ modePaiement: (fac as any).paymentDeclaredMethod || 'virement', datePaiement: (fac as any).paymentDeclaredAt || new Date().toISOString() }) });
+                  toast.success('Paiement validé');
+                  reload();
+                } catch (err) { toast.error(err instanceof Error ? err.message : 'Erreur'); }
+              }}>
+                <CheckCircle2 className="w-4 h-4" /> Valider le paiement
+              </Button>
+              <Button variant="secondary" onClick={async () => {
+                if (!confirm('Contester le paiement déclaré ? La facture repassera en attente et le client sera notifié.')) return;
+                try {
+                  await apiFetch(`/api/factures/${id}/contest-payment`, { method: 'POST' });
+                  toast.success('Paiement contesté');
+                  reload();
+                } catch (err) { toast.error(err instanceof Error ? err.message : 'Erreur'); }
+              }}>
+                <XCircle className="w-4 h-4" /> Contester
+              </Button>
+            </>
           )}
           {fac.status === 'EN_RETARD' && (
             <Button variant="secondary" onClick={() => toast('Fonctionnalite de relance a venir')}>
@@ -78,7 +102,7 @@ export default function FactureDetailPage() {
           )}
 
           {/* Annuler / Avoir — only for non-cancelled, non-paid-by-avoir invoices */}
-          {(fac.status === 'EN_ATTENTE' || fac.status === 'ENVOYEE' || fac.status === 'EN_RETARD' || fac.status === 'PAYEE') && (
+          {(fac.status === 'EN_ATTENTE' || fac.status === 'ENVOYEE' || fac.status === 'PAIEMENT_DECLARE' || fac.status === 'EN_RETARD' || fac.status === 'PAYEE') && (
             <Button variant="secondary" onClick={async () => {
               const action = fac.status === 'PAYEE' ? 'avoir' : 'annuler';
               const msg = fac.status === 'PAYEE'
@@ -108,6 +132,21 @@ export default function FactureDetailPage() {
           )}
         </div>
       </div>
+
+      {fac.status === 'PAIEMENT_DECLARE' && (
+        <div className="p-4 bg-violet-50 border border-violet-200 rounded-xl flex items-center gap-3">
+          <CreditCard className="w-5 h-5 text-violet-600 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-violet-800">Paiement déclaré par le client</p>
+            <p className="text-xs text-violet-600 mt-0.5">
+              {fac.client.firstName} {fac.client.lastName} a déclaré avoir payé
+              {(fac as any).paymentDeclaredMethod ? ` par ${getModePaiementLabel((fac as any).paymentDeclaredMethod)}` : ''}
+              {(fac as any).paymentDeclaredAt ? ` le ${formatDate((fac as any).paymentDeclaredAt)}` : ''}.
+              {(fac as any).paymentDeclaredReference ? ` Réf: ${(fac as any).paymentDeclaredReference}` : ''}
+            </p>
+          </div>
+        </div>
+      )}
 
       {fac.status === 'ANNULEE' && (
         <div className="p-4 bg-zinc-100 border border-zinc-300 rounded-xl flex items-center gap-3">

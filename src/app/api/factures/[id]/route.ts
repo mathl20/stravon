@@ -38,7 +38,7 @@ export async function GET(request: NextRequest, ctx: Ctx) {
 }
 
 // Statuses where the invoice is locked (no content modification allowed)
-const LOCKED_STATUSES = ['PAYEE', 'EN_RETARD', 'ANNULEE'];
+const LOCKED_STATUSES = ['PAIEMENT_DECLARE', 'PAYEE', 'EN_RETARD', 'ANNULEE'];
 
 export async function PUT(request: NextRequest, ctx: Ctx) {
   try {
@@ -58,6 +58,7 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
       const allowed: Record<string, string[]> = {
         'EN_ATTENTE': ['ANNULEE'],
         'ENVOYEE': ['ANNULEE'],
+        'PAIEMENT_DECLARE': ['ANNULEE'],
         'EN_RETARD': ['ANNULEE'],
       };
       const allowedNext = allowed[existing.status] || [];

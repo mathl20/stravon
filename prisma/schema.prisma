@@ -518,6 +518,11 @@ model Facture {
   viewToken          String?   @unique
   viewTokenExpiresAt DateTime?
 
+  // Client payment declaration
+  paymentDeclaredAt        DateTime?
+  paymentDeclaredMethod    String?   // virement, cheque, especes, autre
+  paymentDeclaredReference String?
+
   interventionId String?
   intervention   Intervention? @relation(fields: [interventionId], references: [id])
   devisId        String?       @unique

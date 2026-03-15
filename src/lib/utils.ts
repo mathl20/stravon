@@ -41,7 +41,7 @@ export function calculateTTC(ht: number, tvaRate: number): number {
 export function getStatusLabel(s: string): string {
   return {
     PENDING: 'Planifié', EN_COURS: 'En cours', TERMINE: 'Terminé', INVOICED: 'Facturé', PAID: 'Payé',
-    EN_ATTENTE: 'En attente', PAYEE: 'Payée', EN_RETARD: 'En retard', ANNULEE: 'Annulée',
+    EN_ATTENTE: 'En attente', PAIEMENT_DECLARE: 'Paiement déclaré', PAYEE: 'Payée', EN_RETARD: 'En retard', ANNULEE: 'Annulée',
   }[s] || s;
 }
 
@@ -53,6 +53,7 @@ export function getStatusColor(s: string): string {
     INVOICED: 'bg-sky-50 text-sky-700 border-sky-200',
     PAID: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     EN_ATTENTE: 'bg-amber-50 text-amber-700 border-amber-200',
+    PAIEMENT_DECLARE: 'bg-violet-50 text-violet-700 border-violet-200',
     PAYEE: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     EN_RETARD: 'bg-red-50 text-red-700 border-red-200',
     ANNULEE: 'bg-zinc-100 text-zinc-600 border-zinc-200',
@@ -82,13 +83,14 @@ export function getDevisStatusColor(s: string): string {
 }
 
 export function getFactureStatusLabel(s: string): string {
-  return ({ EN_ATTENTE: 'En attente', ENVOYEE: 'Envoyée', PAYEE: 'Payée', EN_RETARD: 'En retard', ANNULEE: 'Annulée' } as Record<string, string>)[s] || s;
+  return ({ EN_ATTENTE: 'En attente', ENVOYEE: 'Envoyée', PAIEMENT_DECLARE: 'Paiement déclaré', PAYEE: 'Payée', EN_RETARD: 'En retard', ANNULEE: 'Annulée' } as Record<string, string>)[s] || s;
 }
 
 export function getFactureStatusColor(s: string): string {
   return ({
     EN_ATTENTE: 'bg-amber-50 text-amber-700 border-amber-200',
     ENVOYEE: 'bg-blue-50 text-blue-700 border-blue-200',
+    PAIEMENT_DECLARE: 'bg-violet-50 text-violet-700 border-violet-200',
     PAYEE: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     EN_RETARD: 'bg-red-50 text-red-700 border-red-200',
     ANNULEE: 'bg-zinc-100 text-zinc-500 border-zinc-300',
