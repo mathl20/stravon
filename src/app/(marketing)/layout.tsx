@@ -40,6 +40,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           </div>
           <span className="footer-copy">&copy; 2026 Stravon. Tous droits réservés.</span>
           <ul className="footer-links">
+            <li><Link href="/ambassadeur">Devenir ambassadeur</Link></li>
             <li><Link href="/mentions-legales">Mentions légales</Link></li>
             <li><Link href="/cgv">CGV</Link></li>
             <li><a href="mailto:contact@stravon.fr">Contact</a></li>
