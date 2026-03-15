@@ -102,6 +102,30 @@ export async function POST(request: NextRequest) {
       include: { items: true, client: true, createdBy: { select: { id: true, firstName: true, lastName: true } } } as any,
     });
 
+    // Auto-create planning entry for the intervention date
+    try {
+      const interventionDate = new Date(date);
+      const heureDebut = new Date(interventionDate);
+      heureDebut.setUTCHours(8, 0, 0, 0);
+      const heureFin = new Date(interventionDate);
+      const heures = body.heuresEstimees ? Number(body.heuresEstimees) : 2;
+      heureFin.setUTCHours(8 + Math.min(heures, 10), 0, 0, 0);
+
+      await prisma.planning.create({
+        data: {
+          date: interventionDate,
+          heureDebut,
+          heureFin,
+          statut: 'PREVU',
+          utilisateurId: user.id,
+          interventionId: intervention.id,
+          entrepriseId: user.companyId,
+        },
+      });
+    } catch {
+      // Non-blocking: planning entry creation failure shouldn't prevent intervention creation
+    }
+
     return NextResponse.json({ data: intervention }, { status: 201 });
   } catch (error) {
     console.error(error);

@@ -134,7 +134,17 @@ export function InterventionForm({ intervention }: InterventionFormProps) {
             label="Client"
             name="clientId"
             value={form.clientId}
-            onChange={set('clientId')}
+            onChange={(e) => {
+              const cid = e.target.value;
+              setForm((f) => ({ ...f, clientId: cid }));
+              if (!isEditing && cid) {
+                const c = clients.find((cl) => cl.id === cid);
+                if (c?.address) {
+                  const addr = [c.address, c.postalCode, c.city].filter(Boolean).join(', ');
+                  setForm((f) => ({ ...f, clientId: cid, address: addr }));
+                }
+              }
+            }}
             placeholder="Sélectionner un client"
             options={clients.map((c) => ({ value: c.id, label: `${c.firstName} ${c.lastName}` }))}
           />
