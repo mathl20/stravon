@@ -165,8 +165,10 @@ export async function GET(request: NextRequest) {
     if (isEmploye) cf.createdById = user.id;
 
     const queries: Promise<any>[] = [
-      prisma.intervention.aggregate({ where: { ...cf, status: 'PAID', date: { gte: startOfYear } } as any, _sum: { amountTTC: true } }),
-      prisma.intervention.aggregate({ where: { ...cf, status: { in: ['PENDING', 'INVOICED'] } } as any, _sum: { amountTTC: true } }),
+      // CA: sum of PAID factures this year
+      prisma.facture.aggregate({ where: { companyId: user.companyId, status: 'PAYEE', datePaiement: { gte: startOfYear } } as any, _sum: { amountTTC: true } }),
+      // Pending: sum of unpaid factures
+      prisma.facture.aggregate({ where: { companyId: user.companyId, status: { in: ['EN_ATTENTE', 'ENVOYEE', 'PAIEMENT_DECLARE', 'EN_RETARD'] } } as any, _sum: { amountTTC: true } }),
       prisma.client.count({ where: { companyId: user.companyId } }),
       prisma.intervention.count({ where: cf as any }),
       prisma.intervention.findMany({
@@ -180,11 +182,12 @@ export async function GET(request: NextRequest) {
     if (isPatron) {
       const startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1);
       queries.push(
+        // Monthly CA from paid factures (using datePaiement for accurate month attribution)
         prisma.$queryRaw(Prisma.sql`
-          SELECT date_trunc('month', date) as m, COALESCE(SUM("amountTTC"), 0)::float as revenue
-          FROM interventions
-          WHERE "companyId" = ${user.companyId} AND status = 'PAID' AND date >= ${startDate}
-          GROUP BY date_trunc('month', date) ORDER BY m ASC
+          SELECT date_trunc('month', COALESCE("datePaiement", date)) as m, COALESCE(SUM("amountTTC"), 0)::float as revenue
+          FROM factures
+          WHERE "companyId" = ${user.companyId} AND status = 'PAYEE' AND COALESCE("datePaiement", date) >= ${startDate}
+          GROUP BY date_trunc('month', COALESCE("datePaiement", date)) ORDER BY m ASC
         `),
       );
     }
@@ -234,7 +237,7 @@ export async function GET(request: NextRequest) {
     if (!isEmploye) {
       [interventionsCetteSemaine, facturesEnAttenteCount, devisEnCours, devisARelancer] = await Promise.all([
         prisma.intervention.count({ where: { companyId: user.companyId, date: { gte: startOfWeek } } as any }),
-        prisma.facture.count({ where: { companyId: user.companyId, status: { in: ['EN_ATTENTE', 'ENVOYEE', 'PAIEMENT_DECLARE'] } } as any }),
+        prisma.facture.count({ where: { companyId: user.companyId, status: { in: ['EN_ATTENTE', 'ENVOYEE', 'PAIEMENT_DECLARE', 'EN_RETARD'] } } as any }),
         prisma.devis.count({ where: { companyId: user.companyId, status: 'ENVOYE' } as any }),
         prisma.devis.count({ where: { companyId: user.companyId, status: 'ENVOYE', createdAt: { lt: sevenDaysAgo } } as any }),
       ]);
