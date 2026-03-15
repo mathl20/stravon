@@ -43,6 +43,9 @@ export default function InterventionDetailPage() {
   const [activeTab, setActiveTab] = useState<'details' | 'materiel' | 'heures' | 'photos'>('details');
   const [matNom, setMatNom] = useState('');
   const [matQte, setMatQte] = useState('1');
+  const [showFinishModal, setShowFinishModal] = useState(false);
+  const [finishAutoFacture, setFinishAutoFacture] = useState(true);
+  const [finishing, setFinishing] = useState(false);
 
   const reload = () => {
     apiFetch<{ data: InterventionFull }>(`/api/interventions/${id}`)
@@ -107,12 +110,51 @@ export default function InterventionDetailPage() {
   const assignedIds = new Set(inv.assignedUsers?.map((a) => a.user.id) || []);
   const availableTeam = team.filter((m) => !assignedIds.has(m.id));
 
-  const statusActions: { from: string; to: string; label: string; icon: any; variant: 'brand' | 'secondary' }[] = [
-    { from: 'PENDING', to: 'EN_COURS', label: 'Démarrer', icon: Play, variant: 'brand' },
-    { from: 'EN_COURS', to: 'TERMINE', label: 'Terminer', icon: Square, variant: 'brand' },
-    { from: 'TERMINE', to: 'INVOICED', label: 'Marquer facturé', icon: CheckCircle, variant: 'secondary' },
-    { from: 'INVOICED', to: 'PAID', label: 'Marquer payé', icon: CheckCircle, variant: 'brand' },
-  ];
+  const handleFinishIntervention = async () => {
+    setFinishing(true);
+    try {
+      // Mark as TERMINE
+      await apiFetch(`/api/interventions/${id}`, { method: 'PUT', body: JSON.stringify({ status: 'TERMINE' }) });
+
+      if (finishAutoFacture && !isEmp && canManageFactures(perms)) {
+        // Generate facture from intervention items
+        const items = inv.items?.map((it: any) => ({
+          description: it.description,
+          quantity: it.quantity,
+          unitPrice: it.unitPrice,
+        })) || [];
+
+        if (items.length > 0) {
+          const res = await apiFetch<{ data: { id: string } }>('/api/factures', {
+            method: 'POST',
+            body: JSON.stringify({
+              clientId: inv.clientId,
+              interventionId: inv.id,
+              date: new Date().toISOString().split('T')[0],
+              tvaRate: inv.tvaRate,
+              items,
+            }),
+          });
+
+          // Also mark intervention as INVOICED
+          await apiFetch(`/api/interventions/${id}`, { method: 'PUT', body: JSON.stringify({ status: 'INVOICED' }) });
+
+          toast.success('Intervention terminée et facture générée !');
+          setShowFinishModal(false);
+          router.push(`/factures/${res.data.id}`);
+          return;
+        }
+      }
+
+      toast.success('Intervention terminée');
+      setShowFinishModal(false);
+      setInv((prev) => prev ? { ...prev, status: 'TERMINE' } : prev);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erreur');
+    } finally {
+      setFinishing(false);
+    }
+  };
 
   const tabs = [
     { key: 'details' as const, label: 'Détails', icon: FileText },
@@ -136,23 +178,37 @@ export default function InterventionDetailPage() {
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
-          {statusActions
-            .filter((a) => a.from === inv.status)
-            .map((a) => (
-              <Button key={a.to} variant={a.variant} onClick={() => changeStatus(a.to)}>
-                <a.icon className="w-4 h-4" /> {a.label}
-              </Button>
-            ))}
-          {!isEmp && inv.status === 'INVOICED' && canManageFactures(perms) && (
-            <Button variant="brand" onClick={() => router.push(`/factures?from_intervention=${id}`)}>
-              <Receipt className="w-4 h-4" /> Générer facture
+          {/* Planifié → Démarrer */}
+          {inv.status === 'PENDING' && (
+            <Button variant="brand" onClick={() => changeStatus('EN_COURS')}>
+              <Play className="w-4 h-4" /> Démarrer
             </Button>
           )}
-          {inv.status !== 'PAID' && inv.status !== 'INVOICED' && (
+          {/* En cours → Chantier terminé */}
+          {inv.status === 'EN_COURS' && (
+            <Button variant="brand" onClick={() => setShowFinishModal(true)} className="!bg-emerald-600 hover:!bg-emerald-700">
+              <CheckCircle className="w-4 h-4" /> Chantier terminé
+            </Button>
+          )}
+          {/* Terminé → Générer la facture */}
+          {inv.status === 'TERMINE' && !isEmp && canManageFactures(perms) && (
+            <Button variant="brand" onClick={() => { setFinishAutoFacture(true); setShowFinishModal(true); }}>
+              <Receipt className="w-4 h-4" /> Générer la facture
+            </Button>
+          )}
+          {/* Facturé → lien vers facture */}
+          {inv.status === 'INVOICED' && (inv as any).factures?.[0] && (
+            <Button variant="secondary" href={`/factures/${(inv as any).factures[0].id}`}>
+              <Receipt className="w-4 h-4" /> Voir la facture
+            </Button>
+          )}
+          {inv.status !== 'PAID' && inv.status !== 'INVOICED' && inv.status !== 'TERMINE' && (
             <Button variant="brand" href={`/interventions/${id}/chantier`}><Hammer className="w-4 h-4" /> Mode chantier</Button>
           )}
           {!isEmp && <Button variant="secondary" href={`/api/interventions/${id}/pdf`} target="_blank" rel="noreferrer"><FileDown className="w-4 h-4" /> PDF</Button>}
-          {!isEmp && <Button variant="secondary" href={`/interventions/${id}/edit`}><Pencil className="w-4 h-4" /> Modifier</Button>}
+          {!isEmp && (inv.status === 'PENDING' || inv.status === 'EN_COURS') && (
+            <Button variant="secondary" href={`/interventions/${id}/edit`}><Pencil className="w-4 h-4" /> Modifier</Button>
+          )}
         </div>
       </div>
 
@@ -161,29 +217,29 @@ export default function InterventionDetailPage() {
         <div className="lg:col-span-2 space-y-5">
           {/* Summary cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-white border border-zinc-200 rounded-xl p-3">
+            <div className="rounded-xl p-3" style={{ background: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}>
               <p className="text-[11px] text-zinc-400 uppercase tracking-wide font-semibold">Statut</p>
-              <p className="text-sm font-semibold text-zinc-900 mt-1">{getStatusLabel(inv.status)}</p>
+              <p className="text-sm font-semibold mt-1 text-white">{getStatusLabel(inv.status)}</p>
             </div>
             {!isEmp && (
-              <div className="bg-white border border-zinc-200 rounded-xl p-3">
+              <div className="rounded-xl p-3" style={{ background: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <p className="text-[11px] text-zinc-400 uppercase tracking-wide font-semibold">Montant TTC</p>
-                <p className="text-sm font-semibold text-zinc-900 mt-1">{formatCurrency(inv.amountTTC)}</p>
+                <p className="text-sm font-semibold mt-1 text-white">{formatCurrency(inv.amountTTC)}</p>
               </div>
             )}
-            <div className="bg-white border border-zinc-200 rounded-xl p-3">
+            <div className="rounded-xl p-3" style={{ background: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}>
               <p className="text-[11px] text-zinc-400 uppercase tracking-wide font-semibold">Heures</p>
-              <p className="text-sm font-semibold text-zinc-900 mt-1">{(inv.rentabilite?.totalHeures || 0).toFixed(1)}h</p>
+              <p className="text-sm font-semibold mt-1 text-white">{(inv.rentabilite?.totalHeures || 0).toFixed(1)}h</p>
             </div>
-            <div className="bg-white border border-zinc-200 rounded-xl p-3">
+            <div className="rounded-xl p-3" style={{ background: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}>
               <p className="text-[11px] text-zinc-400 uppercase tracking-wide font-semibold">Équipe</p>
-              <p className="text-sm font-semibold text-zinc-900 mt-1">{inv.assignedUsers?.length || 0} assigné{(inv.assignedUsers?.length || 0) > 1 ? 's' : ''}</p>
+              <p className="text-sm font-semibold mt-1 text-white">{inv.assignedUsers?.length || 0} assigné{(inv.assignedUsers?.length || 0) > 1 ? 's' : ''}</p>
             </div>
           </div>
 
           {/* Address */}
           {inv.address && (
-            <div className="flex items-center gap-2 text-sm text-zinc-600 bg-zinc-50 rounded-xl px-4 py-2.5 border border-zinc-100">
+            <div className="flex items-center gap-2 text-sm rounded-xl px-4 py-2.5" style={{ color: '#9d9bab', background: '#1a1a24', border: '1px solid rgba(255,255,255,0.08)' }}>
               <MapPin className="w-4 h-4 text-zinc-400 flex-shrink-0" />
               <span>{inv.address}</span>
             </div>
@@ -643,6 +699,60 @@ export default function InterventionDetailPage() {
                 </button>
                 <p className="text-[11px] text-zinc-400">Le lien devient invalide après signature</p>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Finish intervention modal */}
+      {showFinishModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" style={{ backdropFilter: 'blur(4px)' }}>
+          <div className="w-full max-w-md rounded-2xl p-6 animate-fade-in" style={{ background: '#16161e', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="text-center mb-5">
+              <div className="w-14 h-14 rounded-full bg-emerald-600/20 flex items-center justify-center mx-auto mb-3">
+                <CheckCircle className="w-7 h-7 text-emerald-500" />
+              </div>
+              <h2 className="text-lg font-bold" style={{ color: '#eae9f0' }}>
+                {inv.status === 'TERMINE' ? 'Générer la facture' : 'Chantier terminé ?'}
+              </h2>
+              <p className="text-sm mt-1" style={{ color: '#9d9bab' }}>
+                {inv.status === 'TERMINE'
+                  ? `Créer une facture de ${formatCurrency(inv.amountTTC)} pour ${inv.client.firstName} ${inv.client.lastName}`
+                  : `Marquer l'intervention ${inv.reference} comme terminée`}
+              </p>
+            </div>
+
+            {!isEmp && canManageFactures(perms) && inv.status !== 'TERMINE' && (inv.items?.length || 0) > 0 && (
+              <label className="flex items-center gap-3 p-3 rounded-xl cursor-pointer mb-4" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <input
+                  type="checkbox"
+                  checked={finishAutoFacture}
+                  onChange={(e) => setFinishAutoFacture(e.target.checked)}
+                  className="w-4 h-4 rounded border-zinc-600 text-emerald-600 focus:ring-emerald-500 bg-transparent"
+                />
+                <div>
+                  <p className="text-sm font-medium" style={{ color: '#eae9f0' }}>Générer la facture automatiquement</p>
+                  <p className="text-xs" style={{ color: '#5f5d6e' }}>Une facture de {formatCurrency(inv.amountTTC)} sera créée</p>
+                </div>
+              </label>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowFinishModal(false)}
+                className="flex-1 py-3 rounded-xl text-sm font-semibold transition-colors"
+                style={{ color: '#9d9bab', background: 'rgba(255,255,255,0.06)' }}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={inv.status === 'TERMINE' ? handleFinishIntervention : handleFinishIntervention}
+                disabled={finishing}
+                className="flex-1 py-3 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {finishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                Confirmer
+              </button>
             </div>
           </div>
         </div>
