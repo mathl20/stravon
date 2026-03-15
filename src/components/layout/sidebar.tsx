@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Users, FileText, Settings, LogOut, PanelLeftClose, PanelLeftOpen, Zap, UsersRound, Clock, CalendarDays, FileSignature, Receipt, Sparkles, X, Wrench, Palmtree, Gift, CreditCard, ShieldCheck, LifeBuoy, UserCircle, Link2 } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, LogOut, PanelLeftClose, PanelLeftOpen, Zap, UsersRound, Clock, CalendarDays, FileSignature, Receipt, Sparkles, X, Wrench, Palmtree, Gift, CreditCard, ShieldCheck, LifeBuoy, UserCircle, Link2, Rocket } from 'lucide-react';
 import { canEditSettings, canManageTeam, canManageFactures, canViewClients, hasPermission, PERMISSIONS } from '@/lib/permissions';
 import { usePlan } from '@/lib/plan-context';
 import { getRequiredTierForRoute } from '@/lib/plans';
@@ -16,6 +16,7 @@ interface SidebarProps {
   onLinkClick?: () => void;
   isMobile?: boolean;
   isAdmin?: boolean;
+  onRestartGuide?: () => void;
 }
 
 const NAV_ITEMS = [
@@ -37,7 +38,7 @@ const NAV_ITEMS = [
   { href: '/settings', label: 'Paramètres', icon: Settings, showFor: (p: string[]) => canEditSettings(p) },
 ];
 
-export function Sidebar({ companyName, collapsed, onToggle, permissions, onLinkClick, isMobile, isAdmin: isAdminUser }: SidebarProps) {
+export function Sidebar({ companyName, collapsed, onToggle, permissions, onLinkClick, isMobile, isAdmin: isAdminUser, onRestartGuide }: SidebarProps) {
   const pathname = usePathname();
   const { tier: currentTier, isPaidSubscriber } = usePlan();
 
@@ -140,6 +141,18 @@ export function Sidebar({ companyName, collapsed, onToggle, permissions, onLinkC
             <button onClick={onToggle}
               className={cn('flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium text-zinc-500 hover:bg-white/[0.06] hover:text-zinc-300 transition-all w-full', isCollapsed && 'justify-center px-0 w-10 h-10 mx-auto')}>
               {isCollapsed ? <PanelLeftOpen className="w-[18px] h-[18px]" /> : <><PanelLeftClose className="w-[18px] h-[18px]" /><span>Réduire</span></>}
+            </button>
+          )}
+          {onRestartGuide && (
+            <button onClick={() => { onRestartGuide(); onLinkClick?.(); }}
+              title={isCollapsed ? 'Revoir le guide' : undefined}
+              className={cn(
+                'flex items-center gap-3 px-3 rounded-xl text-[13px] font-medium text-zinc-500 hover:bg-violet-500/10 hover:text-violet-400 transition-all w-full',
+                isMobile ? 'py-3.5 min-h-[44px]' : 'py-2',
+                isCollapsed && 'justify-center px-0 w-10 h-10 mx-auto'
+              )}>
+              <Rocket className="w-[18px] h-[18px]" />
+              {!isCollapsed && <span>Revoir le guide</span>}
             </button>
           )}
           <button onClick={handleLogout}

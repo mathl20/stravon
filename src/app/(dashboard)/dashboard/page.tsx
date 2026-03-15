@@ -265,7 +265,7 @@ export default function DashboardPage() {
 
           {/* 4 Stat cards 2×2 — patron */}
           {canSeeRevenue && (
-            <div className="grid grid-cols-2 gap-2.5 px-5 pb-4">
+            <div className="guide-kpis grid grid-cols-2 gap-2.5 px-5 pb-4">
               <div className="p-3 animate-fade-up" style={{ background: '#1a1a24', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', animationDelay: '0ms' }}>
                 <p className="font-medium uppercase" style={{ color: '#5f5d6e', fontSize: '9px', letterSpacing: '0.06em' }}>CA DU MOIS</p>
                 <p className="font-bold mt-1 tabular-nums" style={{ color: '#6C63FF', fontSize: '22px' }}>{formatCurrency(stats.monthlyRevenue)}</p>
@@ -311,7 +311,7 @@ export default function DashboardPage() {
           )}
 
           {/* Quick actions inside dark card */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 px-5 pb-4">
+          <div className="guide-quick-actions grid grid-cols-2 lg:grid-cols-4 gap-2 px-5 pb-4">
             {quickActions.map((action) => (
               <Link key={action.href} href={action.href} className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium transition-colors" style={{ background: 'rgba(255,255,255,0.06)', color: '#9d9bab', border: '1px solid rgba(255,255,255,0.06)' }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.10)'; e.currentTarget.style.color = '#fff'; }} onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#9d9bab'; }}>
                 <action.icon className="w-3.5 h-3.5 flex-shrink-0" />

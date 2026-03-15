@@ -12,6 +12,7 @@ import { getPlanFromPriceId } from '@/lib/plans';
 import { PlanGate } from '@/components/plan-gate';
 import { FlaskConical, ArrowRight, AlertTriangle, Clock, Mail, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { GuideTour, GuideProgressBanner } from '@/components/onboarding/guide-tour';
 
 export function DashboardShell({ children, user, company, isDemo = false, subscriptionStatus = 'inactive', isAdminUser = false, stripePriceId = null, trialEndsAt = null, emailVerified = true }: {
   children: React.ReactNode;
@@ -28,6 +29,7 @@ export function DashboardShell({ children, user, company, isDemo = false, subscr
   const [mobileOpen, setMobileOpen] = useState(false);
   const [emailBannerDismissed, setEmailBannerDismissed] = useState(false);
   const [resendingEmail, setResendingEmail] = useState(false);
+  const [guideStep, setGuideStep] = useState<number | null | 'loading'>('loading');
   const pathname = usePathname();
 
   // Close mobile menu on route change
@@ -44,6 +46,22 @@ export function DashboardShell({ children, user, company, isDemo = false, subscr
     }
     return () => { document.body.style.overflow = ''; };
   }, [mobileOpen]);
+
+  // Load guide progress
+  useEffect(() => {
+    if (isDemo) { setGuideStep(null); return; }
+    apiFetch<{ guideStep: number | null }>('/api/guide')
+      .then((r) => setGuideStep(r.guideStep))
+      .catch(() => setGuideStep(null));
+  }, [isDemo]);
+
+  const handleRestartGuide = async () => {
+    try {
+      await apiFetch('/api/guide', { method: 'POST', body: JSON.stringify({ action: 'restart' }) });
+      setGuideStep(0);
+      window.location.href = '/dashboard';
+    } catch { /* ignore */ }
+  };
 
   const isPaidSubscriber = isDemo || subscriptionStatus === 'active';
   const currentPlan = isDemo
@@ -152,6 +170,7 @@ export function DashboardShell({ children, user, company, isDemo = false, subscr
               onToggle={() => setCollapsed(!collapsed)}
               permissions={user.permissions}
               isAdmin={isAdminUser}
+              onRestartGuide={handleRestartGuide}
             />
           </div>
         </div>
@@ -170,6 +189,7 @@ export function DashboardShell({ children, user, company, isDemo = false, subscr
             permissions={user.permissions}
             isMobile
             isAdmin={isAdminUser}
+            onRestartGuide={handleRestartGuide}
           />
         </div>
 
@@ -181,6 +201,13 @@ export function DashboardShell({ children, user, company, isDemo = false, subscr
         )}>
           <Header userName={`${user.firstName} ${user.lastName}`} onMenuToggle={() => setMobileOpen(!mobileOpen)} />
           <main className="p-4 sm:p-5 lg:p-8 max-w-7xl mx-auto">
+            {/* Guide progress banner */}
+            {typeof guideStep === 'number' && pathname === '/dashboard' && (
+              <div className="mb-4">
+                <GuideProgressBanner step={guideStep} onContinue={() => setGuideStep(guideStep)} />
+              </div>
+            )}
+
             {/* Block access if no subscription (except subscription page, demo, and admin) */}
             {!isDemo && !isAdminUser && subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing' && pathname !== '/subscription' ? (
               <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -216,6 +243,11 @@ export function DashboardShell({ children, user, company, isDemo = false, subscr
           </main>
         </div>
       </div>
+
+      {/* Guide tour overlay */}
+      {typeof guideStep === 'number' && (
+        <GuideTour initialStep={guideStep} />
+      )}
     </PlanProvider>
     </PermissionsProvider>
   );

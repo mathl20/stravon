@@ -146,6 +146,9 @@ model User {
   referralCode     String?    @unique
   freeMonthsEarned Int        @default(0)
 
+  // Onboarding guide
+  guideStep              Int?     // 0-9, null = guide completed or skipped
+
   // Parrainage (commission-based referral)
   parrainageBalance      Float    @default(0)
   parrainStripeConnectId String?  @unique

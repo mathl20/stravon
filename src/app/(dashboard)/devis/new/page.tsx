@@ -8,7 +8,7 @@ export default function NewDevisPage() {
   const router = useRouter();
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="guide-devis-form space-y-6 animate-fade-in">
       <div className="flex items-center gap-3">
         <button onClick={() => router.push('/devis')} className="btn-ghost !p-2"><ArrowLeft className="w-4 h-4" /></button>
         <div>
