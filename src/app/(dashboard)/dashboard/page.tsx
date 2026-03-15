@@ -112,12 +112,21 @@ export default function DashboardPage() {
   const canSeeRevenue = canViewGlobalRevenue(perms);
   const canSeeAdvanced = hasPermission(perms, PERMISSIONS.SETTINGS_MANAGE);
 
-  // 1. Load basic stats (fast — 5-6 queries)
-  useEffect(() => {
+  // 1. Load basic stats (fast — 5-6 queries) + refresh on tab focus
+  const loadStats = () => {
     apiFetch<{ data: DashboardStats }>('/api/dashboard/stats')
       .then((r) => setStats(r.data))
       .catch((e) => { console.error('Dashboard stats error:', e); setError(e.message || 'Erreur'); })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadStats(); }, []);
+
+  // Re-fetch when user comes back to the tab
+  useEffect(() => {
+    const onFocus = () => { loadStats(); };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
   }, []);
 
   // 1b. Load onboarding status + company SIRET
