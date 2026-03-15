@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, X } from 'lucide-react';
 import { Button, Card, Input, PageLoader } from '@/components/ui';
@@ -15,7 +16,7 @@ interface PlanningEntry {
   heureFin: string;
   statut: string;
   utilisateur: { id: string; firstName: string; lastName: string };
-  intervention: { id: string; reference: string; title: string } | null;
+  intervention: { id: string; reference: string; title: string; address?: string; status?: string; client?: { firstName: string; lastName: string } } | null;
 }
 
 interface TeamMember {
@@ -84,6 +85,7 @@ function toDateStr(d: Date): string {
 }
 
 export default function PlanningPage() {
+  const router = useRouter();
   const perms = usePermissions();
   const [entries, setEntries] = useState<PlanningEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -246,20 +248,29 @@ export default function PlanningPage() {
                   {formatDayHeader(day)}
                 </div>
                 <div className="space-y-1.5">
-                  {dayEntries.map((entry) => (
-                    <Card key={entry.id} className="!p-2.5 !rounded-lg group relative">
+                  {dayEntries.map((entry) => {
+                    const isDone = entry.intervention?.status === 'TERMINE' || entry.intervention?.status === 'PAID' || entry.statut === 'ANNULE';
+                    return (
+                    <Card key={entry.id} className={`!p-2.5 !rounded-lg group relative ${isDone ? 'opacity-50' : ''}`}>
                       <div className="flex items-start justify-between gap-1">
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold text-zinc-900 truncate">
-                            {entry.utilisateur.firstName} {entry.utilisateur.lastName}
-                          </p>
+                        <div className="min-w-0" onClick={() => entry.intervention && router.push(`/interventions/${entry.intervention.id}`)} style={{ cursor: entry.intervention ? 'pointer' : 'default' }}>
+                          {entry.intervention ? (
+                            <>
+                              <p className="text-xs font-semibold text-zinc-900 truncate">{entry.intervention.title}</p>
+                              {entry.intervention.client && (
+                                <p className="text-[11px] text-zinc-500 mt-0.5 truncate">{entry.intervention.client.firstName} {entry.intervention.client.lastName}</p>
+                              )}
+                            </>
+                          ) : (
+                            <p className="text-xs font-semibold text-zinc-900 truncate">
+                              {entry.utilisateur.firstName} {entry.utilisateur.lastName}
+                            </p>
+                          )}
                           <p className="text-[11px] text-zinc-500 mt-0.5">
                             {formatTime(entry.heureDebut)} – {formatTime(entry.heureFin)}
                           </p>
-                          {entry.intervention && (
-                            <p className="text-[11px] text-brand-600 truncate mt-0.5">
-                              {entry.intervention.reference}
-                            </p>
+                          {entry.intervention?.address && (
+                            <p className="text-[10px] text-zinc-400 truncate mt-0.5">{entry.intervention.address}</p>
                           )}
                         </div>
                         {manage && (
@@ -277,7 +288,7 @@ export default function PlanningPage() {
                         </span>
                       </div>
                     </Card>
-                  ))}
+                  );})}
                   {manage && (
                     <button
                       onClick={() => { setForm((f) => ({ ...f, date: key })); setShowModal(true); }}

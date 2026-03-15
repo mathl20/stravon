@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       where: where as any,
       include: {
         utilisateur: { select: { id: true, firstName: true, lastName: true } },
-        intervention: { select: { id: true, reference: true, title: true } },
+        intervention: { select: { id: true, reference: true, title: true, address: true, status: true, client: { select: { firstName: true, lastName: true } } } },
       },
       orderBy: [{ date: 'asc' }, { heureDebut: 'asc' }],
       take: 200,

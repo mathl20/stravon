@@ -162,7 +162,7 @@ export async function GET(request: NextRequest) {
 
     // ── BASIC STATS (fast, loaded first) ──
     const cf: Record<string, unknown> = { companyId: user.companyId };
-    if (isEmploye) cf.createdById = user.id;
+    if (isEmploye) cf.assignedUsers = { some: { userId: user.id } };
 
     const queries: Promise<any>[] = [
       // CA: sum of PAID factures this year
